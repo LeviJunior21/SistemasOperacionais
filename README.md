@@ -23,7 +23,7 @@ O hardware possui uma interface de programação específica, que consiste em um
 
 O software desenvolvido na camada de aplicações utiliza interfaces com abstrações de nível mais alto, como os arquivos e os processos, em vez de utilizar a interface de baixo nível. Essas abstrações são implementadas por meio das chamadas de sistema. Uma chamada de sistema é um mecanismo pelo qual um programa de computador solicita um serviço do núcleo do sistema operacional em que está sendo executado. Isso pode incluir serviços relacionados ao hardware, criação e execução de novos processos e comunicação com os serviços do núcleo de maneira integral.
 
-# Como funciona a execução de um sistema computacional
+# Como funciona a execução de um sistema computacional 
 
 Ao ligar o sistema computacional, a primeira coisa a ser executada é um programa embutido no hardware, que é a BIOS, responsável por realizar um diagnóstico do hardware. O PC (Program Counter), que é um registrador que indica qual será a próxima instrução a ser executada, aponta para o software ou programa armazenado no firmware (BIOS). A BIOS realiza uma verificação do hardware e carrega um programa chamado de bootloader. O bootloader, por sua vez, é responsável por carregar o sistema operacional do disco para a memória.
 
