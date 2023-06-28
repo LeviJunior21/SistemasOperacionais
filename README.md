@@ -29,12 +29,12 @@ Ao ligar o sistema computacional, a primeira coisa a ser executada é um program
 
 Em seguida, o PC passa a apontar para as instruções desse sistema operacional, dando início à execução do código do sistema operacional. O sistema operacional realiza algumas verificações adicionais e, em seguida, inicia a execução de aplicativos que funcionam como serviços do sistema operacional. Dessa forma, o sistema operacional está pronto para executar as aplicações do usuário.
 
-Para executar uma aplicação, como um navegador, uma parte dela é carregada na memória e o PC começa a apontar para esse código. Assim, quando o sistema operacional modifica o valor do PC, o navegador passa a ser executado em vez do sistema operacional, permitindo que a aplicação seja executada.
+Para executar uma aplicação, como um navegador, uma parte dela é carregada do disco para a memória e o PC começa a apontar para esse código. Assim, quando o sistema operacional modifica o valor do PC, o navegador passa a ser executado em vez do sistema operacional, permitindo que a aplicação seja executada.
 
 # Temporizador (Timer)
 
 O temporizador é um hardware programável, no qual o sistema operacional programa intervalos de tempo bem definidos para gerar interrupções. Esse temporizador está conectado ao barramento e envia um sinal de interrupção para o barramento de controle, que é recebido pela CPU e tratado pelo controlador de interrupção programável (PIC).
-Quando a interrupção chega ao PIC, o primeiro passo é aguardar que a CPU termine a execução da instrução em andamento. Em seguida, o PIC direciona o PC para um código armazenado em uma área de memória do sistema operacional conhecida como vetor de interrupções.
+Quando a interrupção chega ao controlador de interrupção programável (PIC), o primeiro passo é aguardar que a CPU termine a execução da instrução em andamento. Em seguida, o PIC direciona o apontador do PC (Program Counter) para um código armazenado em uma área de memória do sistema operacional conhecida como vetor de interrupções.
 
 O vetor de interrupções, localizado na memória do sistema operacional, contém endereços de rotinas específicas que tratam interrupções. Quando ocorre uma interrupção, o PIC espera a conclusão da instrução atual e, em seguida, faz com que o apontador de pilha aponte para a pilha do sistema operacional. Em seguida, o PC é direcionado para o endereço contido no vetor de interrupção correspondente à interrupção do temporizador, executando assim o código do sistema operacional responsável por tratar a interrupção do temporizador.
 
