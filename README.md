@@ -1,6 +1,6 @@
 # Sistemas Operacionais
 
-# Introdução
+## Introdução
 
 Em um sistema computacional, o software atua como intermediário entre a camada do hardware e as aplicações. O processador, a memória e os dispositivos de E/S são interligados por meio de um único barramento.
 O barramento de Von Neumann é responsável por transmitir dados, endereços e sinais de controle. O software é dividido em aplicações, que representam o propósito final, e a camada intermediária entre o hardware e o software, que é o sistema operacional.
@@ -23,7 +23,7 @@ O hardware possui uma interface de programação específica, que consiste em um
 
 O software desenvolvido na camada de aplicações utiliza interfaces com abstrações de nível mais alto, como os arquivos e os processos, em vez de utilizar a interface de baixo nível. Essas abstrações são implementadas por meio das chamadas de sistema. Uma chamada de sistema é um mecanismo pelo qual um programa de computador solicita um serviço do núcleo do sistema operacional em que está sendo executado. Isso pode incluir serviços relacionados ao hardware, criação e execução de novos processos e comunicação com os serviços do núcleo de maneira integral.
 
-# Como funciona a execução de um sistema computacional 
+## Como funciona a execução de um sistema computacional 
 
 Ao ligar o sistema computacional, a primeira coisa a ser executada é um programa embutido no hardware, que é a BIOS, responsável por realizar um diagnóstico do hardware. O PC (Program Counter), que é um registrador que indica qual será a próxima instrução a ser executada, aponta para o software ou programa armazenado no firmware (BIOS). A BIOS realiza uma verificação do hardware e carrega um programa chamado de bootloader. O bootloader, por sua vez, é responsável por carregar o sistema operacional do disco para a memória.
 
@@ -31,7 +31,7 @@ Em seguida, o PC passa a apontar para as instruções desse sistema operacional,
 
 Para executar uma aplicação, como um navegador, uma parte dela é carregada do disco para a memória e o PC começa a apontar para esse código. Assim, quando o sistema operacional modifica o valor do PC, o navegador passa a ser executado em vez do sistema operacional, permitindo que a aplicação seja executada.
 
-# Temporizador (Timer)
+## Temporizador (Timer)
 
 O temporizador é um hardware programável, no qual o sistema operacional programa intervalos de tempo bem definidos para gerar interrupções. Esse temporizador está conectado ao barramento e envia um sinal de interrupção para o barramento de controle, que é recebido pela CPU e tratado pelo controlador de interrupção programável (PIC).
 Quando a interrupção chega ao controlador de interrupção programável (PIC), o primeiro passo é aguardar que a CPU termine a execução da instrução em andamento. Em seguida, o PIC direciona o apontador do PC (Program Counter) para um código armazenado em uma área de memória do sistema operacional conhecida como vetor de interrupções.
@@ -41,7 +41,7 @@ O vetor de interrupções, localizado na memória do sistema operacional, conté
 Dessa forma, o código do sistema operacional que lida com as interrupções de tempo de execução é executado. Isso garante que, após ceder a CPU para uma aplicação, periodicamente a CPU seja devolvida ao sistema operacional. Isso permite que o sistema operacional interrompa a execução de um programa e volte a executar outro, evitando assim a monopolização por um único programa.
 Consequentemente, outros programas têm a oportunidade de usar a CPU, assegurando que o sistema operacional obtenha a CPU em intervalos regulares para executar outras aplicações, ou que a aplicação atual continue a ter acesso à CPU.
 
-Interrupção e Exceção
+## Interrupção e Exceção
 
 Quando executamos instruções no modo núcleo podemos executar todas as instruções que o hardware prover. E quando a CPU está rodando no modo usuário, só podemos rodar um subconjunto dessas instruções. 
 Se um programa no modo usuário tentar executar algo fora da faixa permitida por ele ocorrerá uma exceção. Ou seja, a unidade central de processamento irá gerar uma exceção. E uma exceção acontece sempre que uma instrução não pode ser completada. 
@@ -55,13 +55,12 @@ A melhor forma de fazer isso é gerando exceções de forma controlada, e para t
 Quando por exemplo o Read do usuário é chamado, executa-se a trap que está dentro do read dele e esse trap irá gerar uma exceção. E assim, a máquina passa automaticamente para o modo núcleo onde qualquer coisa pode ser executada. Se os parâmetros forem adequados o programa é redirecionado para o system calls adequado por exemplo o read e comeco a executar o código com o modo de privilégio núcleo. 
 Ou seja, se quisermos executar algo que é privilegiado, precisa-se executar uma Trap para que a máquina libere o modo núcleo  para que possa ser executado. 
 
-
-Processos
+## Processos
 
 O sistema operacional cria um processo para cada instância de uma aplicação que está em execução. Essa estrutura de dados, chamada de processo, armazena o identificador da instância de execução da aplicação, o estado do processo e os valores de todos os registradores da CPU que estavam em uso antes do programa ser interrompido.
 Dessa forma, quando um processo que perdeu a CPU retoma o seu funcionamento, ele terá todas as informações necessárias salvas para continuar a execução.
 
-Estados de um Processo
+## Estados de um Processo
 
 Um processo pode estar em três estados: em rodando, bloqueado e pronto para rodar. Quando um processo é criado, ele é colocado no estado "pronto para rodar". Assim que a CPU fica disponível, o processo é movido para o estado "rodando".
 Se um processo em execução faz uma chamada ao sistema, ele entra no estado "bloqueado". Isso ocorre quando há operações de entrada e saída que requerem um tempo significativo para serem concluídas, como a leitura de disco. Nesse caso, o processo é bloqueado por outro processo até que a operação de entrada e saída seja finalizada.
@@ -72,7 +71,6 @@ Quando ocorre uma interrupção, a CPU finaliza a execução da instrução atua
 Esse tratador realiza operações de entrada e saída no disco e verifica se existem processos bloqueados aguardando o término da operação. Se houver, esses processos bloqueados são movidos para o estado "pronto para rodar".
 Essas transições de estado são realizadas pelo sistema operacional, que manipula as estruturas de dados e altera o estado dos processos. Além disso, o sistema operacional só é executado quando ocorre uma interrupção ou exceção.
 
----
 Assim, podemos descrever os seguintes estados:
 
 De "Rodando" para "Pronto para Rodar":
@@ -86,7 +84,6 @@ De "Bloqueado" para "Pronto para Rodar":
 Essa transição ocorre quando há uma interrupção vinda de um dispositivo que sinaliza a ocorrência de um evento. Além disso, também pode ocorrer por meio de uma chamada ao sistema executada pelo processo que está "rodando". Quando uma interrupção de dispositivo ocorre, o código do sistema operacional responsável por tratá-la é acionado. Esse código realiza operações de entrada e saída relacionadas ao dispositivo e verifica se existem processos bloqueados aguardando o término da operação. Se houver, esses processos bloqueados são movidos para o estado "pronto para rodar". Essa transição também pode ocorrer quando um processo em estado "bloqueado" realiza uma chamada ao sistema específica.
 
 Essas transições de estado são controladas pelo sistema operacional, que manipula as estruturas de dados e atualiza o estado dos processos de acordo com as condições e eventos ocorridos. Além disso, o sistema operacional é executado apenas em caso de interrupção ou exceção.
----
 
 Finalmente,
 A transição de "Rodando" para "Pronto para Rodar" ocorre sempre que uma interrupção de relógio é gerada.
