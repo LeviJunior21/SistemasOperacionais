@@ -55,43 +55,44 @@ A melhor forma de fazer isso é gerando exceções de forma controlada, e para t
 Quando por exemplo o Read do usuário é chamado, executa-se a trap que está dentro do read dele e esse trap irá gerar uma exceção. E assim, a máquina passa automaticamente para o modo núcleo onde qualquer coisa pode ser executada. Se os parâmetros forem adequados o programa é redirecionado para o system calls adequado por exemplo o read e comeco a executar o código com o modo de privilégio núcleo. 
 Ou seja, se quisermos executar algo que é privilegiado, precisa-se executar uma Trap para que a máquina libere o modo núcleo  para que possa ser executado. 
 
+
 Processos
 
-O sistema operacional cria um processo para cada instância de um aplicação que está executando e essa estrutura de dados processo guarda o identificador da instância de execução de uma aplicação, o estado de processo e os valores de todos os registradores da CPU que tinham antes do programa ser interrompido. 
-Assim, quando um processo que perdeu a CPU voltar a ganhá-la, ele terá salvo todas as informações que precisa para continuar a execução. 
+O sistema operacional cria um processo para cada instância de uma aplicação que está em execução. Essa estrutura de dados, chamada de processo, armazena o identificador da instância de execução da aplicação, o estado do processo e os valores de todos os registradores da CPU que estavam em uso antes do programa ser interrompido.
+Dessa forma, quando um processo que perdeu a CPU retoma o seu funcionamento, ele terá todas as informações necessárias salvas para continuar a execução.
 
 Estados de um Processo
 
-Um processo pode estar em 3 estados, rodando, bloqueado e pronto para rodar. Quando um processo é criado, ele vai para o estado pronto para rodar. 
-Quando um processo é criado ele pode ir do estado pronto para rodar e ir para rodando. 
-Se esse estado que está rodando faz chamada ao sistema, ele será bloqueado. Se você precisa de algo que demora muito para receber dados como ler disco, você precisa bloquear esse processo por outro processo até que a operação de entrada e saída seja executada.
-Quando a CPU fica livre, eu trago um processo para pronto para rodar para ir rodando. 
-Quando a fatia de tempo do processo acaba, saímos de rodando para pronto para rodar e assim, outro processo que estava pronto para rodar vai para o estado rodando. 
+Um processo pode estar em três estados: em rodando, bloqueado e pronto para rodar. Quando um processo é criado, ele é colocado no estado "pronto para rodar". Assim que a CPU fica disponível, o processo é movido para o estado "rodando".
+Se um processo em execução faz uma chamada ao sistema, ele entra no estado "bloqueado". Isso ocorre quando há operações de entrada e saída que requerem um tempo significativo para serem concluídas, como a leitura de disco. Nesse caso, o processo é bloqueado por outro processo até que a operação de entrada e saída seja finalizada.
+Quando a fatia de tempo designada para a execução de um processo acaba, ele passa do estado "rodando" para o estado "pronto para rodar". Em seguida, outro processo que estava "pronto para rodar" é movido para o estado "rodando".
 
-Do estado bloqueado, o processo vai passar para o estado pronto para rodar sempre que o evento que o processo estava esperando acontecer.
-Por exemplo, o processo foi bloqueado porque estava esperando a leitura do disco, o sistema operacional foi informado que isso ocorreu quando a controladora do disco interromper a CPU. Ou seja, o sistema operacional volta a ganhar a CPU. 
-Quando uma interrupção acontece, a CPU termina de executar a instrução corrente, em seguida, ela para de executar o que está executando e passa a executar o tratador daquela interrupção que foi gerada, que no caso seria executar o tratador da interrupção de disco. 
-O tratador da interrupção de disco irá realizar operações de entrada e saída no disco e irá verificar se existia algum processo bloqueado esperando pelo fim daquela operação de entrada e saída. Se isso for o caso, esse processo que estava bloqueado passará para pronto para rodar. 
-Essas transições são executadas pelo sistema operacional, que manipula as estruturas de dados e modifica o estado do processo.  
-Além disso, o Sistema operacional só executa quando há uma interrupção ou exceção.
+Um processo no estado "bloqueado" retorna para o estado "pronto para ser executado" assim que o evento pelo qual estava aguardando ocorre. Por exemplo, se um processo estava bloqueado aguardando a leitura do disco, o sistema operacional é notificado quando o controlador do disco interrompe a CPU para informar que a operação foi concluída. Nesse momento, o sistema operacional retoma a CPU e o processo que estava bloqueado é movido para o estado "pronto para rodar".
+Quando ocorre uma interrupção, a CPU finaliza a execução da instrução atual e passa a executar o tratador de interrupção correspondente a interrupção gerada. Por exemplo, se ocorrer uma interrupção de disco, o tratador de interrupção de disco será executado. 
+Esse tratador realiza operações de entrada e saída no disco e verifica se existem processos bloqueados aguardando o término da operação. Se houver, esses processos bloqueados são movidos para o estado "pronto para rodar".
+Essas transições de estado são realizadas pelo sistema operacional, que manipula as estruturas de dados e altera o estado dos processos. Além disso, o sistema operacional só é executado quando ocorre uma interrupção ou exceção.
 
-Assim podemos dizer que o estado:
-Rodando para pronto para rodar: Ocorre quando a fatia de tempo do processo acabou, pelo qual o fim é dado pelo temporizador. E ao tratar essa interrupção do temporizador, o sistema operacional descobre que a fatia de tempo daquele processo acabou.
-Assim, a transição de estado ocorre, e o sistema operacional chama o escalonador de processos que escolhe entre vários processos que estão prontos para rodar, qual o processo que vai ganhar a CPU.
-Note que esse procedimento envolve salvar as informações dos registradores no processo que está deixando a CPU e restaurar do processo que vai ganhar a CPU as informações que foram salvas anteriormente em cima desses registradores. 
-O último registrador que é restaurado é o PC que aponta para a próxima instrução a ser executada. Ao restaurar o PC eu efetivamente passo o controle da CPU para o novo processo. 
+---
+Assim, podemos descrever os seguintes estados:
 
-Rodando para bloqueado: Ocorre sempre que um processo faz um system call bloqueante.
-O System Call é implementado através de uma exceção. E isso ocorre quando o processo executa uma instrução pela qual não tem privilégio e ao executar essa instrução sem privilégio, consequentemente irá gerar uma exceção na unidade central de processamento. 
-Essas exceções são tratadas de forma similar as interrupções, ou seja, o PC passa a apontar para um código do sistema operacional que trata essa essa exceção, no caso um System Call. 
-O System Call é executado e o código do sistema operacional executando esse system call que é parte do código do sistema operacional vai identificar que aquele processo não pode mais prosseguir, ele terá que esperar um evento, e o processo é passado para o estado bloqueado, a informação sobre o evento que ele está esperando é armazenada e o escalonador é chamado novamente para que um novo processo pronto para rodar seja escolhido e passe para o estado rodando. 
-Bloqueado para pronto para rodar: Ocorre com ou uma interrupção vindo de um dispositivo que marca que um evento ocorreu, mas pode vir também através de um system call executado pelo processo que está rodando.
+De "Rodando" para "Pronto para Rodar":
+Esse estado ocorre quando a fatia de tempo designada para a execução de um processo chega ao fim, o que é indicado pelo temporizador. Quando o sistema operacional trata essa interrupção do temporizador, ele identifica que a fatia de tempo daquele processo foi encerrada. Em seguida, ocorre a transição de estado e o sistema operacional chama o escalonador de processos para selecionar qual processo, dentre aqueles prontos para rodar, ganhará a CPU. É importante observar que esse procedimento envolve a preservação das informações dos registradores no processo que está deixando a CPU e a restauração dessas informações do processo que irá ganhar a CPU. O último registrador a ser restaurado é o PC, que indica a próxima instrução a ser executada. Ao restaurar o PC, o controle efetivo da CPU é transferido para o novo processo.
 
-Finalmente, 
-A transição rodando para pronto para rodar ocorre sempre que uma interrupção de relógio é gerada. 
-A transição de pronto para rodar para ir rodando ocorre ou por conta da transição rodando para bloqueado ou por conta da transição rodando para bloqueado.
-A transição rodando para bloqueado ocorre por conta de um System Call. 
-E a transição bloqueada para pronto para rodar ocorre por uma interrupção ou por um system call.  
+De "Rodando" para "Bloqueado":
+Esse estado ocorre sempre que um processo realiza uma chamada ao sistema bloqueante. A chamada ao sistema é implementada por meio de uma exceção, que é gerada quando o processo executa uma instrução para a qual não possui privilégios e ao executar essa instrução sem privilégio, irá gerar uma exceção na unidade central de processamento. Essas exceções são tratadas de maneira semelhante às interrupções, ou seja, o PC passa a apontar para um código do sistema operacional responsável por tratar essa exceção, que, nesse caso, é a chamada ao sistema. 
+A chamada ao sistema é executada e o código do sistema operacional associado a essa chamada identifica que o processo não pode prosseguir e precisa esperar por um evento. Dessa forma, o processo é movido para o estado "bloqueado", e as informações sobre o evento que ele está aguardando são armazenadas. Em seguida, o escalonador é chamado novamente para selecionar um novo processo "pronto para rodar", que será movido para o estado "rodando".
+
+De "Bloqueado" para "Pronto para Rodar":
+Essa transição ocorre quando há uma interrupção vinda de um dispositivo que sinaliza a ocorrência de um evento. Além disso, também pode ocorrer por meio de uma chamada ao sistema executada pelo processo que está "rodando". Quando uma interrupção de dispositivo ocorre, o código do sistema operacional responsável por tratá-la é acionado. Esse código realiza operações de entrada e saída relacionadas ao dispositivo e verifica se existem processos bloqueados aguardando o término da operação. Se houver, esses processos bloqueados são movidos para o estado "pronto para rodar". Essa transição também pode ocorrer quando um processo em estado "bloqueado" realiza uma chamada ao sistema específica.
+
+Essas transições de estado são controladas pelo sistema operacional, que manipula as estruturas de dados e atualiza o estado dos processos de acordo com as condições e eventos ocorridos. Além disso, o sistema operacional é executado apenas em caso de interrupção ou exceção.
+---
+
+Finalmente,
+A transição de "Rodando" para "Pronto para Rodar" ocorre sempre que uma interrupção de relógio é gerada.
+A transição de "Pronto para Rodar" para "Em Execução" ocorre tanto devido à transição de "Rodando" para "Bloqueado" quanto devido à transição de "Rodando" para "Bloqueado".
+A transição de "Rodando" para "Bloqueado" ocorre devido a uma chamada de sistema (System Call).
+A transição de "Bloqueado" para "Pronto para Rodar" ocorre por meio de uma interrupção ou de uma chamada de sistema (System Call).
 
 Escalonamento de Round Robin 
 
