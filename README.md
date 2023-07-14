@@ -62,6 +62,8 @@ Dessa forma, quando um processo que perdeu a CPU retoma o seu funcionamento, ele
 
 ## Estados de um Processo
 
+![Estados de um Processo](https://www.boscojr.com/so/figuras/estados-processos.png)
+
 Um processo pode estar em três estados: em rodando, bloqueado e pronto para rodar. Quando um processo é criado, ele é colocado no estado "pronto para rodar". Assim que a CPU fica disponível, o processo é movido para o estado "rodando".
 Se um processo em execução faz uma chamada ao sistema, ele entra no estado "bloqueado". Isso ocorre quando há operações de entrada e saída que requerem um tempo significativo para serem concluídas, como a leitura de disco. Nesse caso, o processo é bloqueado por outro processo até que a operação de entrada e saída seja finalizada.
 Quando a fatia de tempo designada para a execução de um processo acaba, ele passa do estado "rodando" para o estado "pronto para rodar". Em seguida, outro processo que estava "pronto para rodar" é movido para o estado "rodando".
