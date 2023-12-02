@@ -138,16 +138,14 @@ O ID do filho é o ID do pai até que faça ele pegar o ID dele mesmo.
 
 # Threads
 
-Em um exemplo de Thread, vários clientes mandam uma requisição, o dispatch recebe requisições, ler para verificar o tipo de requisição e repassa para ser executado por outra entidade, o dispatch executa várias tarefas de forma independente e essas tarefas não precisa ser serializadas, ou seja, numa determinada ordem, e pode executadas requisições em paralelo. 
+Em um exemplo de Threads, acontece quando vários clientes mandam uma requisição, o dispatch recebe essas requisições, ler para verificar o tipo de requisição e repassa para ser executado por outra entidade, o dispatch executa várias tarefas de forma independente e essas tarefas não precisa ser serializadas, ou seja, numa determinada ordem e pode executadas requisições em paralelo. 
 
-O dispatch era um listener, antes era um processo que esperava o trabalho dos clientes, esperava até chegar uma requisição dos clientes e quando a requisição chegava, o listener realizava o FORK para atender cada uma das requisições, cada requisição era atendido por um flho do dispatcher, ou seja, ele cria vários filhos igual ao dispatch, que ia executar o código necessário para processar essa requisição para atender o cliente. 
+O dispatch era um listener, antes era um processo que esperava o trabalho dos clientes, esperava até chegar uma requisição dos clientes e quando a requisição chegava, o listener realizava o FORK para atender cada uma das requisições. Cada requisição era atendido por um flho do dispatcher, ou seja, ele cria vários filhos igual ao dispatch, que ia executar o código necessário para processar essa requisição para atender o cliente. 
 As threads funcionam da mesma forma. 
 Entretanto, o FORK usava múltiplos processos para implementar essa solução, FORK é uma chamada ao sistema cara para executar, quando cria um filho a partir de um processo, esse filho tem a mesma memória do pai, ele é uma cópia do pai, essa memória precisa ser copiada e isso custa caro. 
-Se os filhos de um processo precisa se comunicar com entre eles ou com o processo pai, a gente precisa implementar alguma forma de comunicação entre os processos, uma vez que os filhos por padrão não compartilham memória, cada um tem sua própria memória. 
-A abstração Thread vem para nos salvar, uma thread é uma alternativa para esse mesmo problema de dispatch. 
-Então, uma Thread é uma unidade escalonada, tal como o processo, ou seja, o escalonador pode decidir quem vai executar. E cada Thread é um fluxo de execução, tal como é um processo, é uma sequência de instruções que vão ser executadas na máquina. 
-As Threads são partes mais ou menos independentes de uma aplicação maior. 
-As vantagens das Threads em comparação a múltiplos processos é que são menos caras de criar Threads pois elas compartilham a memória do pai, a gente não precisa copiar a memória do pai quando criamos uma Thread nova. 
+Se os filhos de um processo precisa se comunicar com entre eles ou com o processo pai, a gente precisa implementar alguma forma de comunicação entre os processos, uma vez que os filhos por padrão não compartilham memória, cada um tem sua própria memória.
+A abstração Thread vem para nos salvar, uma Thread é uma alternativa para esse mesmo problema de dispatch. Então, uma Thread é uma unidade escalonada, tal como o processo, ou seja, o escalonador pode decidir quem vai executar. E cada Thread é um fluxo de execução, tal como é um processo, é uma sequência de instruções que vão ser executadas na máquina. As Threads são partes mais ou menos independentes de uma aplicação maior. 
+As vantagens das Threads em comparação a múltiplos processos é que as Threads são menos caras de criadas, pois elas compartilham a memória do pai, a gente não precisa copiar a memória do pai quando criamos uma Thread nova. 
 Por isso, para compartilhar a memória do pai é mais fácil programar com Threads, inclusive, arquitetar uma aplicação com múltiplos Threads por causa da memória compartilhada. 
 Podemos usar múltiplas Threads para fazer várias tarefas ao mesmo tempo para melhorar o desempenho no computador em aplicações pesadas. 
 Onde, uma Thread faria uma tarefa e outra Thread faria outra tarefa diferente. 
@@ -156,9 +154,9 @@ As Threads melhoram a responsividade da interface com o usuário.
 As Threads melhoram o desempenho de renderização. 
 As Threads melhoram o desempenho para o IO e fazem a estruturação da aplicação. 
 
-Condições de corrida
+## Condições de corrida
 
-O fluxo de execução pode perder a CPU na hora inadequada por uma interrupção de relógio e essa interrupção faz com que a CPU pare de executar o programa e passe a executar o sistema operacional no pedaço que trata interrupções de relógio.
+O fluxo de execução pode perder a CPU em uma hora inadequada por uma interrupção de relógio e essa interrupção faz com que a CPU pare de executar o programa e passe a executar o sistema operacional no pedaço que trata interrupções de relógio.
 Supondo que essa interrupção de relógio causou o fim da fatia de tempo desse fluxo de execução. Então, o sistema operacional chama o escalonador para que um outro fluxo possa ser executado. 
 Antes da troca, os valores dos registradores foram salvos para quando trouxesse o processo de volta a execução pudesse restaurar os valores nos registradores. 
 
@@ -166,9 +164,24 @@ A condição de corrida acontece sempre que um código manipula uma área de mem
 Para resolver esse problema é necessário a implementação de exclusão mútua na região crítica. 
 Preciso adicionar código a minha aplicação, que garanta que quando o fluxo está executando a sua região crítica, nenhum outro fluxo pode está executando a região crítica correspondente a aquele fluxo. E isso garante que a execução da aplicação será determinística. 
 
+Exemplo de condições de corrida:
+Imagine que você é a Thread 1 e eu sou a Thread 2.
+Temos uma variavel que será usada por nós para incrementar valores.
+Como eu e você interessamos em escrever ou ler essa variável teremos condições de corrida para essa variável.
+Digamos que a variável tenha um valor inicial 1000.
+Eu ganho a CPU e eu leio o valor da variável que é 1000 e quero incrementar 2000 a ela. E suponha que antes de incrementar e salvar eu acabe a minha fatia de tempo e eu perco a CPU. Assim, você será o proximo a ganhar a CPU.
+Antes da troca, os valores dos registradores foram salvos para quando eu voltar a execução pudesse restaurar os valores nos registradores.
+Agora, você ganha a CPU, você ler o valor da variável que ainda é 1000(pois não foi incrementada pois perdi a CPU antes de incrementar).
+Suponha que você queira incrementar 500 e você consegue, você fez (1000 + 500 = 1500) e coloca na variável esse valoer 1500, ou seja, tira o valor que há nele, não importa qual seja e coloca 1500. Você acabou de realizar a tarefa que você desejava, portanto, você morre feliz.
+Mas eu ainda não acabei de executar, eu volto a ganhar a CPU em algum momento depois do ocorrido, e eu volto a fazer o que gostaria que era incrementar e salvar o valor. Eu incremento 1000 que eu li com 2000 que gostaria de incrementar e esse resultado da 3000. Em seguida eu retiro o vaalor atual da variavel, não importa qual esteja e coloco o valor que eu somei que foi 3000. Ou seja, retirei esses 1500 e coloquei 3000 no lugar.
+
+Valor atual da variável: 3000
+Valor que deveria ser na varuável: 3500
+
+Imagine se isso fosse o saldo de uma empresa em um banco, imagine que cada Thread fosse outras empresas realizando pagamento milhonarios a essa empresa.
 
 
-Solução de condições de corrida com espera ocupada
+## Solução de condições de corrida com espera ocupada
 
 Um dos requisitos para soluções de exclusão mútua é que as soluções devem garantir a exclusão mútua no acesso às regiões críticas, não podem fazer hipóteses sobre o número de processadores ou a velocidade relativa dos processadores envolvidos na computação, 
 devem impedir que um fluxo entre na região crítica se outro fluxo estiver usando a região crítica. 
