@@ -176,6 +176,7 @@ Suponha que você queira incrementar 500 e você consegue, você fez (1000 + 500
 Mas eu ainda não acabei de executar, eu volto a ganhar a CPU em algum momento depois do ocorrido, e eu volto a fazer o que gostaria que era incrementar e salvar o valor. Eu incremento 1000 que eu li com 2000 que gostaria de incrementar e esse resultado da 3000. Em seguida eu retiro o vaalor atual da variavel, não importa qual esteja e coloco o valor que eu somei que foi 3000. Ou seja, retirei esses 1500 e coloquei 3000 no lugar.
 
 Valor atual da variável: 3000
+
 Valor que deveria ser na varuável: 3500
 
 Imagine se isso fosse o saldo de uma empresa em um banco, imagine que cada Thread fosse outras empresas realizando pagamento milhonarios a essa empresa.
