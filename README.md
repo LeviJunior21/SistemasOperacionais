@@ -177,7 +177,7 @@ Mas eu ainda não acabei de executar, eu volto a ganhar a CPU em algum momento d
 
 Valor atual da variável: 3000
 
-Valor que deveria ser na varuável: 3500
+Valor que deveria ser na variável: 3500
 
 Imagine se isso fosse o saldo de uma empresa em um banco, imagine que cada Thread fosse outras empresas realizando pagamento milhonarios a essa empresa.
 
