@@ -297,3 +297,4 @@ Já para o notifyAll() que acorda as threads é importante que esse teste que é
  Ou seja, o wait serve para sinalizar que está aguardando um evento ou que uma condição seja satisfeita. 
 E os dois notify servem para notificar que um evento ocorreu ou que uma condição foi satisfeita. 
 
+
