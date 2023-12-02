@@ -247,7 +247,6 @@ O loop aguarda a liberação da região crítica e é executado fora da região 
 
 
 
-
 Semáforos 
 
 A execução com vários fluxos e memória compartilhada são bem mais rápidos. E deve-se fazer loops antes da região crítica invés de dentro dela. 
