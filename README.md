@@ -93,53 +93,50 @@ A transição de "Pronto para Rodar" para "Em Execução" ocorre tanto devido à
 A transição de "Rodando" para "Bloqueado" ocorre devido a uma chamada de sistema (System Call).
 A transição de "Bloqueado" para "Pronto para Rodar" ocorre por meio de uma interrupção ou de uma chamada de sistema (System Call).
 
-Escalonamento de Round Robin 
+## Escalonamento de Round Robin 
 
-Quando o processo que estava rodando bloqueia ou quando a fatia de tempo dele acaba e ele passa para o estado pronto para rodar, eu preciso escolher um novo processo para ganhar a CPU. Um pedaço da CPU que faz essa decisão é o escalonador e um dos escalonadores mais populares é o escalonador Round Robin. 
+Quando o processo que estava rodando bloqueia ou quando a fatia de tempo dele acaba, o processo passa para o estado pronto para rodar. Assim eu preciso escolher um novo processo para ganhar a CPU. Um pedaço da CPU que faz essa decisão é o escalonador, e um dos escalonadores mais populares é o escalonador Round Robin.
 A ideia do escalonamento Round Robin é tentar ser justo com todos os processos. A ideia é que todos os processos que estão ativos vão ganhar uma fração da CPU que é mais ou menos a mesma, pelo menos durante o tempo em que aqueles processos estão coexistindo no sistema. 
-Para fazer isso, esse algoritmo usa uma estrutura de dados extremamente simples. Usa-se uma fila onde o processo que está na cabeça da fila é o processo que está rodando e todos os processos em sequência são os processos que estão prontos para rodar. 
-E esses processos vão rodar nessa ordem, ou seja, o processo que está rodando, quando a fatia de tempo dele acaba ou ele perde a CPU, se a fatia de tempo dele acabar e ele continuar pronto para rodar, ele vai para o fim da fila e o próximo processo ganha a CPU. 
-Cada processo aponta para o próximo processo a ser executado depois dele. 
-E cada processo mapeia na tabela de processos a sua instrução a ser executada. 
-Além disso, existe um apontador que aponta para a cabeça de um processo, quando um processo acaba ela aponta para o próximo processo que estava sendo apontado por quem executou por último. Ou seja, um processo aponta para outro processo e esse outro será apontado pelo apontador de processos. 
+Para fazer isso, esse algoritmo usa uma estrutura de dados extremamente simples. Usa-se uma fila onde o processo que está na cabeça da fila é o processo que está rodando e todos os processos em sequência são os processos que estão prontos para rodar. E esses processos vão rodar nessa ordem, ou seja, quando a fatia de tempo do processo que está rodando acaba ou ele perde a CPU. Se a fatia de tempo dele acabar e ele continuar pronto para rodar, ele vai para o fim da fila e o próximo processo ganha a CPU. 
+Cada processo aponta para o próximo processo a ser executado depois dele e cada processo mapeia na tabela de processos a sua instrução a ser executada. 
+Além disso, existe um apontador que aponta para a cabeça de um processo. Quando um processo acaba, ela aponta para o próximo processo que estava sendo apontado por quem executou por último. Ou seja, um processo aponta para outro processo e esse outro será apontado pelo apontador de processos, como se fosse uma LinkedList onde temos um head que aponta para a cabeça do nó em execução.
 Além disso, o último processo da fila precisa apontar para o primeiro processo a ser executado (que está executando), e assim os processos ficam de forma circular na fila. 
 
-Existem outras formas no sistema que vão impactar a forma como eu atualizo essa minha lista (fila). 
-Por exemplo, digamos que o processo 1 esteja executando e antes da fatia de tempo do processo 1 acabar, o processo 1 faz um chamado ao sistema que é o bloqueia, que faz com o programa 1 passe do estado rodando para bloqueado. 
-No estado bloqueado, o programa 1 não consegue ganhar a CPU porque ele está esperando um evento e ele não consegue executar a próxima instrução do seu código até que o evento pelo qual ele está esperando ocorra. Portanto, eu preciso retirar o processo 1 dessa fila que é o processo que está bloqueado. 
-Eu sei que a cabeça está apontando para o programa 1, e que o fim que fica na cabeça aponta para o último da lista, eu elimino o programa para qual a cabeça aponta que é o programa 1 e passo para a cabeça apontar para o processo pelo qual o programa 1 apontava. E faz-se o fim apontar para a nova cabeça que será quem o processo será executado e isso é o evento rodando para o bloqueado. 
+Existem outras formas no sistema que vão impactar a forma sobre como eu atualizo essa minha lista (fila). 
+Por exemplo, digamos que o processo 1 esteja executando e antes da fatia de tempo do processo 1 acabar, o processo 1 faz um chamada ao sistema que o bloqueia, e que faz com o programa 1 passe do estado rodando para bloqueado. 
+No estado bloqueado, o programa 1 não consegue ganhar a CPU porque ele está esperando um evento e ele não consegue executar a próxima instrução do seu código até que o evento pelo qual ele está esperando ocorra. Portanto, eu preciso retirar o processo 1 dessa fila que é o processo que está bloqueado.
+Eu sei que a cabeça está apontando para o processo 1, eu elimino o processo para qual a cabeça aponta que é o processo 1 e passo para a cabeça apontar para o processo pelo qual o programa 1 apontava. E faz-se o último processo da fila (tail) apontar para a nova cabeça que será quem o processo será executado e isso é o evento rodando para o bloqueado. 
 
-Quando um processo é criado, o pai dele está rodando, pois o pai dele é quem está executando o System Call que vai criar aquele processo semelhante ao pai, só que esse processo vai está no estado pronto para rodar e ele vai ser colocado no fim dessa fila. 
+Quando um processo é criado, o pai dele está rodando, pois o pai dele é quem está executando o System Call que vai criar aquele processo semelhante ao pai (que é o processo criado que estamos falando), só que esse processo vai estar no estado pronto para rodar e ele vai ser colocado no fim dessa fila. 
 
-O estado que é bloqueado fica pronto para rodar quando o evento que um processo estava bloqueado aconteça, ou seja, o processo bloqueado está esperando por determinado evento e o evento acontece, o evento que estava bloqueado passa para pronto para rodar e ele precisa ser incluído nessa fila. Ou seja, quando sai de rodando para bloqueado ele sai da fila. 
-O processo quando sai de bloqueado para pronto para rodar deve voltar a fila, só que não no fim da fila e a razão é que o tempo que esse processo passou bloqueado pode ser muito grande, sobretudo comparando com o tempo de uma fatia. Alguns processos desse passam por algumas dezenas de milissegundos executando e se um processo bloqueou por alguns segundos, os processos que estavam prontos para rodar executaram dezenas ou até centenas de vezes antes que esse processo que estava bloqueado pudesse ser executado pois estava bloqueado. 
-E assim é importante dar uma prioridade para esse processo, e para o nosso exemplo anterior, o programa 1 que foi bloqueado voltaria para o segundo colocado na fila enquanto o primeiro lugar seria quem está rodando, e o segundo processo seria colocado em terceiro a ser executado para poder dar espaço para esse processo poder ficar no segundo lugar da nossa fila. 
-As empresas usam round-robin ou variações dele para fazer escalonamento. 
+O estado que é bloqueado fica pronto para rodar quando o evento que um processo estava bloqueado aconteça, ou seja, o processo bloqueado está esperando por determinado evento e o evento acontece. Quando o evento acontece, o processo que estava bloqueado passa para o estado pronto para rodar e ele precisa ser incluído na fila novamente. Ou seja, quando sai de rodando para bloqueado ele sai da fila e quando ele sai de bloqueado para pronto para rodar ele volta para a fila.
+O processo quando sai de bloqueado para pronto para rodar deve voltar a fila, mas ele não vai para o fim da fila e a razão para isso é que o tempo que esse processo passou bloqueado pode ser muito grande, sobretudo comparando com o tempo de uma fatia. Alguns processos desse passam por algumas dezenas de milissegundos executando e se um processo bloqueou por alguns segundos, os processos que estavam prontos para rodar executaram dezenas ou até centenas de vezes antes que esse processo que estava bloqueado pudesse ser executado pois estava bloqueado. Enquanto esse processo estava bloqueado, outros processos executaram varias vezes enquanto ele aguardava e seria injusto coloca-lo no fim da fila. 
+E assim, é importante dar uma prioridade para esse processo que passou de bloqueado para pronto para rodar, e para o nosso exemplo anterior, o processo 1 que foi bloqueado voltaria para a fila, mas para o segundo colocado na fila enquanto o primeiro lugar seria quem ainda está rodando, e o segundo processo daria espaço para entrar o processo que passou de bloqueado para pronto para rodar, sendo assim, o terceiro processo seria colocado em terceiro lugar a ser executado para poder dar espaço para esse processo poder ficar no segundo lugar da nossa fila. 
+As empresas usam round-robin ou variações dele para fazer escalonamento.
 
-Criação de processos
+## Criação de processos
 
 Quando temos um processo que executa um programa shell, o shell escreve na tela o prompt e lê o que o usuário digita no teclado.
-Quando o usuário escreve “ls” e tecla enter, a linha é passada para o shell que interpreta essa linha e o shell cria um novo processo que vai executar o programa /bin/ls que vai listar os nomes dos arquivos do diretório corrente no terminal.
-Quando o ls morre, o shell volta a executar, coloca novamente o prompt e fica esperando para o próximo comando. 
+Quando o usuário escreve “ls” e tecla enter, a linha é passada para o shell que interpreta essa linha e o shell cria um novo processo que vai executar o programa /bin/ls que vai listar os nomes dos arquivos do diretório corrente no terminal. Quando o ls morre, o shell volta a executar, coloca novamente o prompt e fica esperando para o próximo comando. 
 
-Como o shell cria esse processo?
+### Como o shell cria esse processo?
 
-Os processos estão armazenados na tabela de processos que contém informações na memória sobre quem é o processo, qual o estado do processo, quais são os valores dos registradores daquele processo na última vez que ele executou para que eu possa retomar a execução do processo de onde ele parou, etc. 
-Além disso, na memória, o processo ocupa uma determinada área da memória. Nessa área de memória, temos a imagem de um processo e ela é formada por quatro pedaços que são o código, os dados estáticos, o heap, e a pilha.
+Os processos estão armazenados na tabela de processos, essa tabela de processos contém informações na memória sobre quem é o processo, qual o estado do processo, quais são os valores dos registradores daquele processo na última vez que ele executou para que eu possa retomar a execução do processo de onde ele parou, etc. 
+Além disso, na memória, o processo ocupa uma determinada área da memória. Nessa área de memória, temos a imagem de um processo e ela é formada por quatro pedaços que são o código, os dados estáticos, o heap e a pilha.
 Quando um processo quer criar um outro processo, ela terá que criar uma entrada na tabela de processos para armazenar as informações do novo processo, inicializar essa estrutura de dados processos com os dados adequados e criar uma nova imagem para esse novo processo que vai ser criado e isso é feito via chamada ao sistema. 
 Nos sistemas da família UNIX essa chamada ao sistema se chama FORK, que significa encruzilhada do inglês. 
-A ideia é que tenha um processo que tem um fluxo de execução até que ele chame o System Call FORK, e aí nesse ponto a gente passa a ter dois processos executando, o pai e o filho. A diferença é que no pai do System Call FORK retorna o identificador do filho, enquanto que no filho do System Call retorna zero. 
+A ideia é que tenha um processo tenha um fluxo de execução até que ele chame o System Call FORK, e aí nesse ponto a gente passa a ter dois processos executando, o pai e o filho. A diferença é que no pai do System Call FORK retorna o identificador do filho, enquanto que no filho do System Call retorna zero. 
 
-No programa 1 tenho o código fonte, os dados e a pilha. E em algum lugar do código fonte do programa 1 tenho uma chamada para FORK, quando o programa 1 chama o FORK irá ocorrer um System Call e será gerado uma exceção, o PC(Program Counter) da CPU que estava apontando para uma área do processo do programa 1, passará a apontar para uma área sistema operacional que tem o código do System Call FORK. 
+No processo 1, eu tenho o código fonte, os dados e a pilha. E em algum lugar do código fonte do processo 1 eu tenho uma chamada para FORK. Quando o programa 1 chama o FORK, irá ocorrer um System Call e será gerado uma exceção, o PC(Program Counter) da CPU que estava apontando para uma área do processo do processo 1 passará a apontar para uma área sistema operacional que tem o código do System Call FORK. 
 
 A execução desse código aloca na tabela de processos uma entrada que esteja livre.
 Digamos que o P1 (processo 1) esteja ocupando a entrada Processo#1 e que a entrada Processo#3 esteja vazia, então o Fork aloca essa entrada 3 para ser o lugar onde a gente vai guardar informações do processo P1’ que é o filho de P1 e P1’ será criado semelhante ao pai. 
 Então, o FORK aloca uma área de memória que seja pelo menos do mesmo tamanho que a área de memória onde o pai está executando. Fazemos uma cópia do pai na memória. 
 P1’ será exatamente o mesmo código do pai P1, uma cópia dos dados do pai, uma cópia da pilha do pai e termos uma chamada Fork em P1’ também. 
 O Fork do pai retorna o identificador do filho enquanto que o filho vai retornar o zero. 
-O id do filho é o id do pai até que faça ele pegar o id dele mesmo. 
+O ID do filho é o ID do pai até que faça ele pegar o ID dele mesmo. 
 
-Threads
+# Threads
 
 Em um exemplo de Thread, vários clientes mandam uma requisição, o dispatch recebe requisições, ler para verificar o tipo de requisição e repassa para ser executado por outra entidade, o dispatch executa várias tarefas de forma independente e essas tarefas não precisa ser serializadas, ou seja, numa determinada ordem, e pode executadas requisições em paralelo. 
 
