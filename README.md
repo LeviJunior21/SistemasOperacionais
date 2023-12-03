@@ -478,7 +478,7 @@ E os dois notify servem para notificar que um evento ocorreu ou que uma condiç�
           }
       }
 
-A saida do código será:
+Uma das possiveis saidas do código acima será:
 
     Thread 0 está executando!
     Thread 0 terminou de executar!
