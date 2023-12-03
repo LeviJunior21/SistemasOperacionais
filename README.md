@@ -245,34 +245,35 @@ Para alterar um valor de uma variável ao fim da região crítica, basta fazer e
 
 E assim, outra Thread ao fazer flag.testAndSet(); poderá modificar o valor e entrar na região crítica.
 
-> public class Bakery {
->     private AtomicInteger ticketCounter;
->     private int[] tickets;
->     private int n;
+>     public class Bakery {
+          private AtomicInteger ticketCounter;
+          private int[] tickets;
+          private int n;
+     
+          public Bakery(int n) {
+              this.ticketCounter = new AtomicInteger(0);
+              this.tickets = new int[n];
+              this.n = n;
+          }
+     
+     
+          public void lock() {
+              int myID = Thread.getID();
+              this.tickets[myID] = this.ticketCounter.incrementAndGet();
+     
+              for (int i = 0; i < this.n; i++) {
+                  while (this.tickets[i] != 0 &&this.tickets[i] < this.tickets[myID]);
+              
+              }
+           }
+     
+     
+           public void unlock() {
+               int myId = Thread.getID()
+               ticket[id] = 0;
+           }
+    }
 >
->     public Bakery(int n) {
->         this.ticketCounter = new AtomicInteger(0);
->         this.tickets = new int[n];
->         this.n = n;
->     }
->
->
->     public void lock() {
->         int myID = Thread.getID();
->         this.tickets[myID] = this.ticketCounter.incrementAndGet();
->
->         for (int i = 0; i < this.n; i++) {
->             while (this.tickets[i] != 0 &&this.tickets[i] < this.tickets[myID]);
->         
->         }
->      }
->
->
->      public void unlock() {
->          int myId = Thread.getID()
->          ticket[id] = 0;
->      }
-> }
 
 Depois que executa-se a TSL, move-se o conteúdo de flag para o R1 e na mesma instrução movemos algo que é diferente de zero para a flag, ou seja, R1 receberá o conteúdo antigo de flag e flag receberá um novo conteúdo diferente de zero. 
 Depois disso, executamos uma instrução de comparação que compara o valor zero a R1 e a comparação é feita subtraindo os dois valores que queremos comparar. 
