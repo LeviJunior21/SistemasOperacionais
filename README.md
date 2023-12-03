@@ -274,6 +274,13 @@ E assim, outra Thread ao fazer flag.testAndSet(true); poderá modificar o valor 
           }
       }
 
+      public class Main {
+    
+          public static void main(String[] args) {
+              Exemplo exemplo = new Exemplo();
+              exemplo.runThreads();
+          }
+      }
 >
 
 Depois que executa-se a TSL, move-se o conteúdo de flag para o R1 e na mesma instrução movemos algo que é diferente de zero para a flag, ou seja, R1 receberá o conteúdo antigo de flag e flag receberá um novo conteúdo diferente de zero. 
