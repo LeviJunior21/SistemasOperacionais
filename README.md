@@ -221,12 +221,12 @@ Suponha também que temos uma variável inteira para incementar.
 
 Digamos que vem uma requisição desejando incrementar, e o que ela precisa fazer é perguntar se a região crítica está livre.
 O que fazemos é esse codigo: 
-> flag.testAndSet();
+> flag.testAndSet(true);
 
 Esse trecho de código faz é pegar o valor do estado atual, no caso é False (pois iniciamos o AtomicBoolean como false) e em seguida ele tenta modifificar o valor para True.
 Como a variavel inicialmente está False, então ao realizar
 
-flag.testAndSet() 
+flag.testAndSet(true) 
 
 Ele vai pegar o valor inicial (que no nosso caso está como False inicialmente) para retorna-lo após tentar trocas o estado atual para True.
 Como a variável está False, então ele consegue trocar para True e retorna o estado anterior que é False.
@@ -234,7 +234,7 @@ Como a variável está False, então ele consegue trocar para True e retorna o e
 Novo Estado: True
 Valor retornado: False
 
-Se ele tentar fazer de novo esse trecho de código flag.testAndSet(), ele pegará o valor atual que agora é True e tentará mudar esse valor True para True. Em seguida ele retorna o estado anterior (antes de tentar a troca) que é True.
+Se ele tentar fazer de novo esse trecho de código flag.testAndSet(true), ele pegará o valor atual que agora é True e tentará mudar esse valor True para True. Em seguida ele retorna o estado anterior (antes de tentar a troca) que é True.
 Novo Estado: True
 Valor retornado: True
 
@@ -243,36 +243,37 @@ Ele so consegue modificar o estado quando ele está como False. Retornado False 
 Para alterar um valor de uma variável ao fim da região crítica, basta fazer essa instrução para que outra Thread possa ser executada.
 > flag.set(false);
 
-E assim, outra Thread ao fazer flag.testAndSet(); poderá modificar o valor e entrar na região crítica.
+E assim, outra Thread ao fazer flag.testAndSet(true); poderá modificar o valor e entrar na região crítica.
 
->     public class Bakery {
-          private AtomicInteger ticketCounter;
-          private int[] tickets;
+>     import java.util.concurrent.atomic.AtomicBoolean;
+
+      class Exemplo {
           private int n;
-     
-          public Bakery(int n) {
-              this.ticketCounter = new AtomicInteger(0);
-              this.tickets = new int[n];
-              this.n = n;
+          private AtomicBoolean flag;
+    
+          public Exemplo() {
+             this.flag = new AtomicBoolean(false);
           }
-     
-     
-          public void lock() {
-              int myID = Thread.getID();
-              this.tickets[myID] = this.ticketCounter.incrementAndGet();
-     
-              for (int i = 0; i < this.n; i++) {
-                  while (this.tickets[i] != 0 &&this.tickets[i] < this.tickets[myID]);
-              
+    
+          public void runThreads() {
+              for (int i = 0; i < 10; i++) {
+                 final int threadID = i;
+                 Thread thread = new Thread(() -> run(threadID));
+                 thread.start();
               }
-           }
-     
-     
-           public void unlock() {
-               int myId = Thread.getID()
-               ticket[id] = 0;
-           }
-    }
+    
+              while (this.n < 10);
+          }
+    
+          public void run(int i) {
+              while (this.flag.getAndSet(true));
+              System.out.println(String.format("Thread %d está executando!", i));
+              this.n += 1;
+              System.out.println(String.format("Thread %d terminou de executar!", i));
+              this.flag.set(false);
+          }
+      }
+
 >
 
 Depois que executa-se a TSL, move-se o conteúdo de flag para o R1 e na mesma instrução movemos algo que é diferente de zero para a flag, ou seja, R1 receberá o conteúdo antigo de flag e flag receberá um novo conteúdo diferente de zero. 
