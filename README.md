@@ -418,7 +418,7 @@ Como podemos usar Mutex da maneira correta (vamos chamar signal como um up):
 
     Semaphore mutex = new Semaphore(1);    // Padrãp mutex sempre começa com o valor inicial igual a 1
     mutex.wait();                          // O valor do semáfaro será o valor atual do semáfaro - 1: (1 - 1 = 0)
-    // Codigo da nossa rehião crítica.
+    // Codigo da nossa região crítica.
     mutex.signal();                        // O valor do semáfaro será o valor atual do semáfaro + 1: (0 + 1 = 1)
 
 Só isso mesmo. Imagine Thread1 e Thread2.  
