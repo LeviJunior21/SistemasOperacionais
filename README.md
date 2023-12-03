@@ -245,7 +245,7 @@ Para alterar um valor de uma variável ao fim da região crítica, basta fazer e
 
 E assim, outra Thread ao fazer flag.testAndSet(true); poderá modificar o valor e entrar na região crítica.
 
->     import java.util.concurrent.atomic.AtomicBoolean;
+      import java.util.concurrent.atomic.AtomicBoolean;
 
       class Exemplo {
           private int n;
@@ -274,6 +274,8 @@ E assim, outra Thread ao fazer flag.testAndSet(true); poderá modificar o valor 
           }
       }
 
+>
+>
       public class Main {
     
           public static void main(String[] args) {
@@ -281,21 +283,21 @@ E assim, outra Thread ao fazer flag.testAndSet(true); poderá modificar o valor 
               exemplo.runThreads();
           }
       }
->
+
 
 Nesse código acima garantimos que a saida sempre será neste padrão:
 
-> Thread N está executando!
-> Thread N terminou de executar!
+    Thread N está executando!
+    Thread N terminou de executar!
 
 E nunca será desta forma:
 
-> Thread X está executando!
-> Thread X terminou de executar!
-> Thread Y está executando!
-> Thread Z está executando!
-> Thread Z terminou de executar!
-> Thread Y terminou de executar!
+    Thread X está executando!
+    Thread X terminou de executar!
+    Thread Y está executando!
+    Thread Z está executando!
+    Thread Z terminou de executar!
+    Thread Y terminou de executar!
 
 ### Continuando...
 
@@ -307,7 +309,7 @@ E se der maior que zero é porque um é menor que o outro.
 Em seguida, tentamos saber qual foi o valor da última comparação e se a comparação for diferente de zero, ou seja, R1 for diferente de zero ele fica em loop. 
 Essas instruções podem ser colocadas no início da região crítica onde só entraria na região crítica se quando executasse a região crítica, ela estivesse vazia, ou seja flag igual zero, ou seja, disponível. 
 
-    >
+    
     enter_region_critical:                      // Indica o início da região crítica
     loop:                                    // Marcação que indica um início de loop.
     TSL R1, Flag           // Instrução que testa e define o valor da variável Flag 
@@ -334,7 +336,7 @@ Essas instruções podem ser colocadas no início da região crítica onde só e
     leave_region_critical: // Marcação indicando o fim da região crítica.
     MV #0, Flag               // Instrução que armazena 0 a variável Flag, indicando que a região
                                       // crítica está disponível para outras Threads a executarem. 
->
+
 Se Flag = 0, então, a região crítica está disponível.
 Se Flag = 1, então a região crítica está ocupada.
 
