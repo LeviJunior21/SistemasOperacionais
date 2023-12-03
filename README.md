@@ -1,6 +1,6 @@
 # Sistemas Operacionais
 
-## Introdução
+## Introdução  
 
 Em um sistema computacional, o software atua como intermediário entre a camada do hardware e as aplicações. O processador, a memória e os dispositivos de E/S são interligados por meio de um único barramento.
 O barramento de Von Neumann é responsável por transmitir dados, endereços e sinais de controle. O software é dividido em aplicações, que representam o propósito final, e a camada intermediária entre o hardware e o software, que é o sistema operacional.  
