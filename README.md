@@ -500,3 +500,4 @@ Uma das possiveis saidas do código acima será:
     Thread 2 terminou de executar!
     Thread 1 está executando!
     Thread 1 terminou de executar!
+
