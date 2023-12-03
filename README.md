@@ -464,6 +464,5 @@ E os dois notify servem para notificar que um evento ocorreu ou que uma condiç�
               System.out.println(String.format("Thread %d está executando!", i));
               this.n += 1;
               System.out.println(String.format("Thread %d terminou de executar!", i));
-              this.flag.set(false);
           }
     }
