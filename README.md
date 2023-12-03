@@ -290,7 +290,7 @@ Nesse código acima garantimos que a saida sempre será neste padrão:
     Thread N está executando!
     Thread N terminou de executar!
 
-E nunca será desta forma:
+E nunca será desta forma (um de muitos possiveis casos):
 
     Thread X está executando!
     Thread X terminou de executar!
