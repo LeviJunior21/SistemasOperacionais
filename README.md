@@ -449,7 +449,7 @@ E os dois notify servem para notificar que um evento ocorreu ou que uma condi√ß√
 
     class Exemplo {
         private int n;
-
+    
         public void runThreads() {
               for (int i = 0; i < 10; i++) {
                  final int threadID = i;
@@ -459,10 +459,21 @@ E os dois notify servem para notificar que um evento ocorreu ou que uma condi√ß√
     
               while (this.n < 10);
           }
-
-          public synchronized void run(int n) {
+    
+          public synchronized void run(int i) {
               System.out.println(String.format("Thread %d est√° executando!", i));
               this.n += 1;
               System.out.println(String.format("Thread %d terminou de executar!", i));
           }
     }
+    
+>
+>
+     
+      public class Main {
+    
+          public static void main(String[] args) {
+              Exemplo exemplo = new Exemplo();
+              exemplo.runThreads();
+          }
+      }
