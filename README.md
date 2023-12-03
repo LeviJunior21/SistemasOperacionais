@@ -196,11 +196,27 @@ O fluxo que não vai poder entrar na região crítica ficará em loop até que a
 Deve-se colocar uma flag booleana global para sinalizar que a região crítica está sendo executada.
 
 Exemplo:
-class Exemplo {
-    public int valor;
 
+    class Exemplo {
+        private int valor;
+        private boolean flag;
+        
+        public void runThreads() {
+            for (int i = 0; i < 10; i++) {
+                final int threadI = i;
+                Thread thread = new Thread(() -> run(threadI));
+                thread.start();
+            }
+        }
+
+        public void run(int i) {
+            while(this.flag);
+            this.flag = true;    
+            this.valor += i;
+            this.flag = false;
+        }
     
-}
+    }
 
 
 Seguindo o exemplo, o problema é que fazendo isso eu resolvo o problema de uma região crítica mas crio outra região crítica e o que pode ocorrer é que se esse fluxo de execução for interrompido depois da checagem que a flag era false e antes de escrever que flag era true, eu perder a CPU.
@@ -347,49 +363,81 @@ O loop aguarda a liberação da região crítica e é executado fora da região 
 
 
 
+## Semáforos 
 
-
-Semáforos 
-
-A execução com vários fluxos e memória compartilhada são bem mais rápidos. E deve-se fazer loops antes da região crítica invés de dentro dela. 
-Podemos resolver esse problema de exclusão mútua usando outro tipo de solução, soluções que são oferecidas pelo sistema operacional que permitem que um processo ou uma thread ao invés de ficar em espera ocupada, peça ao sistema operacional para bloquear aquela thread e colocar uma outra thread para executar. E o nome da solução que implementa isso são semáforos. 
+A execução com vários fluxos e memória compartilhada são bem mais rápidos e deve-se fazer loops antes da região crítica invés de dentro dela. 
+E podemos resolver esse problema de exclusão mútua usando outro tipo de solução, soluções que são oferecidas pelo sistema operacional que permitem que um processo ou uma thread ao invés de ficar em espera ocupada, peça ao sistema operacional para bloquear aquela Thread e colocar uma outra Thread para executar. O nome da solução que implementa isso são Semáforos. 
  
-Semáforos são abstrações do sistema operacional para permitir que processos possam se sincronizar, normalmente é implementado como tipo abstrato de dados que oferece duas características primitivas. 
-Uma é chamada de down, que serve para que um processo ou uma thread solicite seu bloqueio, dependendo do estado do semáforo. 
-E a outra é chamada de up, que serve para notificar um outro processo que uma determinada condição foi satisfeita. 
-Ou seja, down serve para que um processo ou thread o bloqueie. 
-E up serve para notificar um outro processo que uma condição foi satisfeita. 
+Semáforos são abstrações do sistema operacional para permitir que processos possam se sincronizar. Normalmente é implementado como tipo abstrato de dados que oferece duas características primitivas. 
+Uma é chamada de down (para simplificar chamaremos de down, mas nas linguagens de programação ela se chama arquire), que serve para que um processo ou uma thread solicite seu bloqueio, dependendo do estado do semáforo. 
+E a outra é chamada de up (para simplificar chamaremos de up, mas nas linguagens de programação ela se chama release), que serve para notificar um outro processo que uma determinada condição foi satisfeita. 
+Ou seja, down serve para que um processo ou Thread o bloqueie. 
+E up serve para notificar um outro processo que uma condição foi satisfeita. Ou seja, uma Thread acabou de executar completamente a região crítica. 
 
-No código, uma variável carrega o valor do semáforo e outra variável carrega uma lista dos processos que estão bloqueados neste semáforo. A variável do semáforo é global.  
+No código, uma variável carrega o valor do semáforo e outra variável carrega uma lista dos processos que estão bloqueados neste semáforo. A variável do semáforo deve ser global.  
 
-Se o semáforo for 0, então a região crítica está protegida de outras threads. 
-Se o semáforo for 1, então a região crítica protegida pelo semáforo está disponível e pode ser acessada por outro processo ou thread. 
+Se o semáforo for igual a 0, então a região crítica está protegida de outras Threads. 
+Se o semáforo for igual a 1, então a região crítica protegida pelo semáforo está disponível e pode ser acessada por outro Processo ou Thread. 
 
-O down é implementado da seguinte forma, se o valor do semáforo já é zero, então o processo que fez a chamada do down deve bloquear e para isso a gente adiciona uma referência para esse processo na lista de processos bloqueados desse semáforo. Remove a referência desse processo na lista de processos ou threads que estão prontos para rodar, onde essa fila é de escalonados para rodar. E em seguida, chamamos o escalonador para que um um novo processo seja colocado para rodar. 
+Se o semáforo for igual a 10, então ele permite que outras 10 Threads que deseje manipular uma variável compartilhada entre a região crítica.
+Se o semáfaro for igual a -10, então a próxima Thread que deseja entrar na região crítica só poderá entrar quando 11 Threads incrementarem o seu valor.
+
+O down é implementado da seguinte forma, se o valor do semáforo já é zero, então o processo que fez a chamada do down deve bloquear (pois ele tenta decrementar o valor e como está em 0, então se decrementasse ficaria negativo) e para isso a gente adiciona uma referência para esse processo na lista de processos bloqueados desse semáforo. Remove a referência desse processo na lista de Processos ou Threads que estão prontos para rodar, onde essa fila é de escalonados para rodar. E em seguida, chamamos o escalonador para que um um novo processo seja colocado para rodar. 
 Ou seja, o processo é bloqueado e a CPU passa para um outro processo que está pronto para rodar. 
 E caso contrário, caso o valor do semáforo não seja igual a zero, então o valor é positivo e o valor do semáforo será decrementado, a função down retorna e o processo não vai bloquear. 
 
 Já o up funciona da seguinte forma: se não tiver nenhum processo bloqueado nesse semáforo, ou seja, se a lista de processos bloqueados estiver vazia, então o up incrementa o valor do semáforo. 
-Caso contrário, um dos processos que estava bloqueado é removido da lista de bloqueados e é adicionado na lista de processos que estão prontos para rodar. 
+Caso contrário, um dos processos que estava bloqueado é removido da lista de bloqueados e será adicionado na lista de processos que estão prontos para rodar. 
 Quando o escalador executar novamente ele vai passar a considerar esse processo que foi desbloqueado, como um processo passível de ser colocado para executar. 
 
-Para se implementar a exclusão mútua usando semáforos, basta-se criar um semáforo binário, ou seja, iniciado com o valor 1 e antes de entrar na região crítica o processo chama mutex.down para bloquear outro processo ou thread e após executar a região crítica, o processo chama mutex.up para liberá-la. 
+Para se implementar a exclusão mútua usando semáforos, basta-se criar um semáforo binário, ou seja, iniciado com o valor 1 e antes de entrar na região crítica o processo chama mutex.down para bloquear outro Processo ou Thread e após executar a região crítica, o processo chama mutex.up para liberá-la. 
 
 Quando mutex.down é executado, o primeiro processo que fizer isso vai encontrar o valor do mutex igual a 1 e o down vai entrar na parte que vai decrementar o semáforo para zero e vai retornar. Ou seja, o primeiro processo que chamará mutex down não vai bloquear. 
-Se antes desse processo que está dentro da região crítica terminar a execução na região crítica, um outro processo fizer mutex.down, o que vai acontecer é que o valor do semáforo é zero e esse processo vai bloquear porque agora, a região crítica não está disponível. 
+Se antes desse processo que está dentro da região crítica terminar a execução na região crítica, um outro processo fizer mutex.down, o que vai acontecer é que o valor do semáforo é zero e esse processo vai bloquear porque agora, a região crítica não está disponível, pois se decrementar ficará negativo e isso não pode ocorrer, então ele bloqueia esse processo que fez down.
 
 Depois que o processo executa a região crítica ele chama up e temos duas situações onde uma delas é que não tenho nenhum processo bloqueado nesse semáforo, nesse caso o up vai simplesmente incrementar o valor do semáforo e voltar ao valor original que é 1. 
 Caso contrário, o que vai acontecer é que um dos processos que estavam bloqueados neste semáforo vai ser acordado e o semáforo que continua com o valor zero vai simplesmente incrementar o valor do semáforo e voltar ao valor original que é 1 para que esse processo que estava bloqueado possa acessar a região crítica. Caso contrário, o que vai acontecer é que um dos processos que estavam bloqueados neste semáforo vai ser acordado e ele vai verificar se o semáforo está positivo(região crítica liberada) e vai entrar na região crítica e em seguida vai bloqueá-la e o semáforo volta ao valor zero. Caso o semáforo esteja em zero, ele volta a ficar bloqueado esperando o próximo up. 
 
-Monitores
+Exemplo de Semafaró padrão Mutex:
+
+    Semaphore mutex = new Semaphore(1);    // Padrãp mutex sempre começa com o valor inicial igual a 1
+    mutex.wait();                          // O valor do semáfaro será o valor atual do semáfaro - 1: (1 - 1 = 0)
+    mutex.up();                            // O valor do semáfaro será o valor atual do semáfaro + 1: (0 + 1 = 1)
+    mutex.up();                            // O valor do semáfaro será o valor atual do semáfaro + 1: (1 + 1 = 2)
+    mutex.up();                            // O valor do semáfaro será o valor atual do semáfaro + 1: (2 + 1 = 3)
+    mutex.up();                            // O valor do semáfaro será o valor atual do semáfaro + 1: (3 + 1 = 4)
+    mutex.wait();                          // O valor do semáfaro será o valor atual do semáfaro - 1: (4 - 1 = 3)
+    mutex.wait();                          // O valor do semáfaro será o valor atual do semáfaro - 1: (3 - 1 = 2)
+    mutex.wait();                          // O valor do semáfaro será o valor atual do semáfaro - 1: (2 - 1 = 1)
+    mutex.wait();                          // O valor do semáfaro será o valor atual do semáfaro - 1: (1 - 1 = 0)
+    mutex.wait();                          // O valor do semáfaro será o valor atual do semáfaro - 1: Bloqueia o Processo 
+
+Ele bloqueia o processo pois o valor do semáfaro não pode ser negativo(não pode fazer 0 - 1), e por isso ele bloqueia o Processo ou Thread que executou essa última linha.
+
+Como podemos usar Mutex da maneira correta (vamos chamar signal como um up):
+
+    Semaphore mutex = new Semaphore(1);    // Padrãp mutex sempre começa com o valor inicial igual a 1
+    mutex.wait();                          // O valor do semáfaro será o valor atual do semáfaro - 1: (1 - 1 = 0)
+    // Codigo da nossa rehião crítica.
+    mutex.signal();                        // O valor do semáfaro será o valor atual do semáfaro + 1: (0 + 1 = 1)
+
+Só isso mesmo. Imagine Thread1 e Thread2.
+Se Thread1 faz wait, então o semáfaro vai para 0 e ela entra na região crítica, executando o código entre o wait e o signal.
+Se a Thread1 perde a CPU e vem a Thread2, ela vai tentar fazer wait também. Quando el a faz mutex.wait() ele não pode ser ser negativo e o valor continua 0, assim, a Thread2 é bloqueada e ela sai da lista de processos pronto pra rodar.
+A Thread1 volta a executar e termina de executar a região crítica. Então ela faz mutex.signal(), e o valor do semáfaro sobe de 0 para 1.
+Assim, a Thread que estava aguardando pela liberação do mutex volta a lista de processos pronto para rodar.
+Em algum momento a Thread2 vai para rodando, e ela tenta fazer o que estava tentando fazer antes de bloquear que era mutex.wait() e ela consegue fazendo o semáfaro ir de 1 par 0.
+A Thread2 executa a região crítica e quando ela sai da região crítica ela incrementa o semáfaro para 1.
+
+## Monitores
 
 Existem duas funcionalidades básicas para o uso de monitor, onde uma é a definição de regiões críticas e isso é feito através de anotações no código onde ficam as regiões críticas, ou seja, de alguma forma o programador indica para o compilador que pedaços do código compõem as regiões críticas. E isso permite que o compilador insira instruções automaticamente que protejam as regiões críticas do programa. 
 
-A outra funcionalidade é denominada de forma genérica de variáveis condicionais e a ideia dessas variáveis é que elas podem ser definidas para que um processo ou uma thread sinalize que está aguardando um evento ou que uma condição seja satisfeita. 
+A outra funcionalidade é denominada de forma genérica de variáveis condicionais e a ideia dessas variáveis é que elas podem ser definidas para que um Processo ou uma Thread sinalize que está aguardando um evento ou que uma condição seja satisfeita. 
 Ou de outro lado, que notifique que um evento ocorreu ou que uma condição foi satisfeita. 
-Quando um processo sinaliza que está aguardando um evento ou uma condição, esse processo vai ser bloqueado e um outro processo que notifica que aquele evento que o primeiro estava esperando foi satisfeita, então o processo que estava bloqueado volta a ficar pronto para ser executado. 
+Quando um processo sinaliza que está aguardando um evento ou uma condição, esse processo vai ser bloqueado e um outro processo que notifica que aquele evento que o primeiro estava esperando foi satisfeita, então o processo que estava bloqueado volta a ficar pronto para ser executado (pronto para rodar). 
 
-Em Java, dizemos a anotação synchronized para algum método da classe, ou blocos dentro do método, significa que esses trechos de código não podem ser executados em paralelo, ou ao mesmo tempo por duas threads diferentes. Ou seja, uma vez que uma thread, esteja executando um dos métodos marcados com synchronized em um objeto particular, nenhuma outra thread vai poder executar métodos daquele mesmo objeto que também estejam marcados com synchronized. 
+Em Java, dizemos a anotação synchronized para algum método da classe, ou blocos dentro do método, significa que esses trechos de código não podem ser executados em paralelo, ou ao mesmo tempo por duas threads diferentes. Ou seja, uma vez que uma Thread, esteja executando um dos métodos marcados com synchronized em um objeto particular, nenhuma outra thread vai poder executar métodos daquele mesmo objeto que também estejam marcados com synchronized. 
 Synchronized também pode ser usado indicado um objeto específico e a thread que detém o bloco de um determinado objeto, quando ela entra dentro desse bloco synchronized qualquer outra thread que queira adquirir aquele bloco vai ser bloqueado até que a thread que detém o bloco termine de executar o bloco sincronizado. 
 Em relação a variáveis condicionais, em Java qualquer objeto pode ser usado como uma variável condicional .
 A sinalização para aguardar para um evento naquela condição é simplesmente chamar o método obj.wait(), ou seja chamar wait do objeto que está sendo usado para sincronização. Essa chamada precisa ser feita dentro de um bloco sincronizado nesse objeto que é usado como variável condicional. 
@@ -399,4 +447,23 @@ Já para o notifyAll() que acorda as threads é importante que esse teste que é
  Ou seja, o wait serve para sinalizar que está aguardando um evento ou que uma condição seja satisfeita. 
 E os dois notify servem para notificar que um evento ocorreu ou que uma condição foi satisfeita. 
 
+    class Exemplo {
+        private int n;
 
+        public void runThreads() {
+              for (int i = 0; i < 10; i++) {
+                 final int threadID = i;
+                 Thread thread = new Thread(() -> run(threadID));
+                 thread.start();
+              }
+    
+              while (this.n < 10);
+          }
+
+          public synchronized void run(int n) {
+              System.out.println(String.format("Thread %d está executando!", i));
+              this.n += 1;
+              System.out.println(String.format("Thread %d terminou de executar!", i));
+              this.flag.set(false);
+          }
+    }
