@@ -311,8 +311,8 @@ Essas instruções podem ser colocadas no início da região crítica onde só e
 
     
     enter_region_critical:                      // Indica o início da região crítica
-    loop:                                    // Marcação que indica um início de loop.
-    TSL R1, Flag           // Instrução que testa e define o valor da variável Flag 
+    loop:                                       // Marcação que indica um início de loop.
+    TSL R1, Flag                                // Instrução que testa e define o valor da variável Flag 
                                     
     CMP R1, #0
     JNZ loop
@@ -321,21 +321,20 @@ Essas instruções podem ser colocadas no início da região crítica onde só e
     
     Onde, 
     enter_region_critical:                      // Indica o início da região crítica
-    loop:                                               // Marcação que indica um início de loop.
+    loop:                                       // Marcação que indica um início de loop.
     
-    TSL R1, Flag          // Instrução que testa e define o valor da variável Flag atomicamente. 
-                                   // Se a variável Flag for 0, ela a define como 1 e carrega 0 em R1
-                                   // Se a variável Flag já for 1, ela a deixa inalterada e carrega 1 em R1
+    TSL R1, Flag                                // Instrução que testa e define o valor da variável Flag atomicamente. 
+                                                // Se a variável Flag for 0, ela a define como 1 e carrega 0 em R1
+                                                // Se a variável Flag já for 1, ela a deixa inalterada e carrega 1 em R1
     
-    CMP R1, #0           // Instrução que compara o valor de R1 (0 ou 1) com o valor imediato 0.
+    CMP R1, #0                                  // Instrução que compara o valor de R1 (0 ou 1) com o valor imediato 0.
+    JNZ loop;                                   // Volta para a marcação do loop se a comparação anterior indicar que
+                                                // R1 não é igual a 0. O loop continua enquanto a Flag já estiver definida 
+                                                // (ou seja, a região crítica está sendo executada por outro thread).
     
-    JNZ loop;               // Volta para a marcação do loop se a comparação anterior indicar que
-                                  // R1 não é igual a 0. O loop continua enquanto a Flag já estiver definida 
-                                  // (ou seja, a região crítica está sendo executada por outro thread).
-    
-    leave_region_critical: // Marcação indicando o fim da região crítica.
-    MV #0, Flag               // Instrução que armazena 0 a variável Flag, indicando que a região
-                                      // crítica está disponível para outras Threads a executarem. 
+    leave_region_critical:                      // Marcação indicando o fim da região crítica.
+    MV #0, Flag                                 // Instrução que armazena 0 a variável Flag, indicando que a região
+                                                // crítica está disponível para outras Threads a executarem. 
 
 Se Flag = 0, então, a região crítica está disponível.
 Se Flag = 1, então a região crítica está ocupada.
