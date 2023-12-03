@@ -283,6 +283,22 @@ E assim, outra Thread ao fazer flag.testAndSet(true); poderá modificar o valor 
       }
 >
 
+Nesse código acima garantimos que a saida sempre será neste padrão:
+
+> Thread N está executando!
+> Thread N terminou de executar!
+
+E nunca será desta forma:
+
+> Thread X está executando!
+> Thread X terminou de executar!
+> Thread Y está executando!
+> Thread Z está executando!
+> Thread Z terminou de executar!
+> Thread Y terminou de executar!
+
+### Continuando...
+
 Depois que executa-se a TSL, move-se o conteúdo de flag para o R1 e na mesma instrução movemos algo que é diferente de zero para a flag, ou seja, R1 receberá o conteúdo antigo de flag e flag receberá um novo conteúdo diferente de zero. 
 Depois disso, executamos uma instrução de comparação que compara o valor zero a R1 e a comparação é feita subtraindo os dois valores que queremos comparar. 
 Se essa subtração for zero é porque esses valores são iguais. 
@@ -291,34 +307,34 @@ E se der maior que zero é porque um é menor que o outro.
 Em seguida, tentamos saber qual foi o valor da última comparação e se a comparação for diferente de zero, ou seja, R1 for diferente de zero ele fica em loop. 
 Essas instruções podem ser colocadas no início da região crítica onde só entraria na região crítica se quando executasse a região crítica, ela estivesse vazia, ou seja flag igual zero, ou seja, disponível. 
 
-
-enter_region_critical:                      // Indica o início da região crítica
-loop:                                    // Marcação que indica um início de loop.
-TSL R1, Flag           // Instrução que testa e define o valor da variável Flag 
-                                
-CMP R1, #0
-JNZ loop
-leave_region_critical:
-MV #0, Flag
-
-Onde, 
-enter_region_critical:                      // Indica o início da região crítica
-loop:                                               // Marcação que indica um início de loop.
-
-TSL R1, Flag          // Instrução que testa e define o valor da variável Flag atomicamente. 
-                               // Se a variável Flag for 0, ela a define como 1 e carrega 0 em R1
-                               // Se a variável Flag já for 1, ela a deixa inalterada e carrega 1 em R1
-
-CMP R1, #0           // Instrução que compara o valor de R1 (0 ou 1) com o valor imediato 0.
-
-JNZ loop;               // Volta para a marcação do loop se a comparação anterior indicar que
-                              // R1 não é igual a 0. O loop continua enquanto a Flag já estiver definida 
-                              // (ou seja, a região crítica está sendo executada por outro thread).
-
-leave_region_critical: // Marcação indicando o fim da região crítica.
-MV #0, Flag               // Instrução que armazena 0 a variável Flag, indicando que a região
-                                  // crítica está disponível para outras Threads a executarem. 
-
+    >
+    enter_region_critical:                      // Indica o início da região crítica
+    loop:                                    // Marcação que indica um início de loop.
+    TSL R1, Flag           // Instrução que testa e define o valor da variável Flag 
+                                    
+    CMP R1, #0
+    JNZ loop
+    leave_region_critical:
+    MV #0, Flag
+    
+    Onde, 
+    enter_region_critical:                      // Indica o início da região crítica
+    loop:                                               // Marcação que indica um início de loop.
+    
+    TSL R1, Flag          // Instrução que testa e define o valor da variável Flag atomicamente. 
+                                   // Se a variável Flag for 0, ela a define como 1 e carrega 0 em R1
+                                   // Se a variável Flag já for 1, ela a deixa inalterada e carrega 1 em R1
+    
+    CMP R1, #0           // Instrução que compara o valor de R1 (0 ou 1) com o valor imediato 0.
+    
+    JNZ loop;               // Volta para a marcação do loop se a comparação anterior indicar que
+                                  // R1 não é igual a 0. O loop continua enquanto a Flag já estiver definida 
+                                  // (ou seja, a região crítica está sendo executada por outro thread).
+    
+    leave_region_critical: // Marcação indicando o fim da região crítica.
+    MV #0, Flag               // Instrução que armazena 0 a variável Flag, indicando que a região
+                                      // crítica está disponível para outras Threads a executarem. 
+>
 Se Flag = 0, então, a região crítica está disponível.
 Se Flag = 1, então a região crítica está ocupada.
 
