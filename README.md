@@ -181,23 +181,99 @@ Valor que deveria ser na variável: 3500
 
 Imagine se isso fosse o saldo de uma empresa em um banco, imagine que cada Thread fosse outras empresas realizando pagamento milhonarios a essa empresa.
 
+Como essa variável está sendo utilizada para escrever por vários processos, então temos uma região crítica para essa variável.
+Se essa variável fosse apenas de leitura, então haveria problemas, pois o valor nunca muda e não precisariamos nos preocupar com problemas sobre condições de corrida.
 
 ## Solução de condições de corrida com espera ocupada
 
-Um dos requisitos para soluções de exclusão mútua é que as soluções devem garantir a exclusão mútua no acesso às regiões críticas, não podem fazer hipóteses sobre o número de processadores ou a velocidade relativa dos processadores envolvidos na computação, 
-devem impedir que um fluxo entre na região crítica se outro fluxo estiver usando a região crítica. 
-E deve-se evitar inanição (starvation), ou seja, todos os fluxos precisam ganhar em algum momento a região crítica para que eles possam avançar na sua computação.
+Um dos requisitos para soluções de exclusão mútua é que as soluções devem garantir a exclusão mútua no acesso às regiões críticas. Não podemos fazer hipóteses sobre o número de processadores ou a velocidade relativa dos processadores envolvidos na computação, mas devemos impedir que um fluxo entre na região crítica se outro fluxo estiver usando a região crítica. 
+Ou seja, deve-se evitar inanição (starvation), ou seja, todos os fluxos precisam ganhar em algum momento a região crítica para que eles possam avançar na sua computação.
 Um starvation ocorre quando um processo nunca é executado, pois processos de prioridade maior sempre o impedem.
 
-As soluções que vou discutir podem ser implementadas sem o auxílio do sistema operacional, ou seja, não preciso fazer um System Call para implementar essas soluções, posso fazer tudo com o código do usuário. 
-Além disso, essas soluções vão incluir algum código antes da entrada da região crítica que vai verificar se esse fluxo pode ou não entrar na sua região crítica. 
-O fluxo que não vai poder entrar na região crítica ficará em loop até que a região crítica seja liberada e ele possa entrar na sua região crítica.
-Tipicamente, no final da região crítica, também é executado algum código que sinalize que a região crítica não está sendo ocupada por aquele fluxo. 
-Deve-se colocar uma flag booleana global para sinalizar que a região crítica está sendo executada. 
-Mas o problema é que fazendo isso eu resolvo o problema de uma região crítica mas crio outra região crítica e o que pode ocorrer é que se esse fluxo de execução for interrompido depois da checagem que a flag era false e antes de escrever que flag era true, eu perder a CPU.
-Assim, outro fluxo pode entrar na região crítica, onde um fluxo irá escrever na memória compartilhada e no fim da execução, voltará ao antigo fluxo que perdeu a CPU que fará flag igual a true e irá sobrescrever os dados do fluxo que ganhou a CPU após ele perder. 
- 
-Para resolver esse problema, podemos usar a instrução TSL (Test and Set Lock) que são instruções em Assembly que fazem duas operações ao mesmo tempo. 
+As soluções que vou discutir podem ser implementadas sem o auxílio do sistema operacional, ou seja, não preciso fazer um System Call para implementar essas soluções, eu posso fazer tudo com o código do usuário.
+Além disso, essas soluções vão incluir algum código antes da entrada da região crítica que vai verificar se esse fluxo pode ou não entrar na região crítica.
+O fluxo que não vai poder entrar na região crítica ficará em loop até que a região crítica seja liberada e ele (o processo que estava em loop) possa entrar na região crítica. Para isso, devemos tipicamente, no final da região crítica, executar algum código que sinalize que a região crítica não está sendo ocupada por aquele fluxo.
+Deve-se colocar uma flag booleana global para sinalizar que a região crítica está sendo executada.
+
+Exemplo:
+class Exemplo {
+    public int valor;
+
+    
+}
+
+
+Seguindo o exemplo, o problema é que fazendo isso eu resolvo o problema de uma região crítica mas crio outra região crítica e o que pode ocorrer é que se esse fluxo de execução for interrompido depois da checagem que a flag era false e antes de escrever que flag era true, eu perder a CPU.
+Assim, outro fluxo pode entrar na região crítica, onde um fluxo irá escrever na memória compartilhada e no fim da execução, voltará ao antigo fluxo que perdeu a CPU que fará flag igual a true e irá sobrescrever os dados do fluxo que ganhou a CPU após ele perder. Ou seja, poderá haver mais de um processo sendo executado, manipulando a mesma região crítica.
+
+Para resolver esse problema, podemos usar a instrução TSL (Test and Set Lock) que são instruções em Assembly que fazem duas operações ao mesmo tempo.
+TSL é uma instução de máquina (uma operação atômica) super rápida que impede que o problema do exemplo acima aconteça. Entretanto, essa instrução de máquina não é encontrado em todos os processadores (como processadores mais antigos).
+
+### Como funciona o TSL (Test-And-Set-Lock)?
+
+O Lock TSL ou TAS (significa a mesma coisa) é um mecanismo de sincronização para implementar a exclusão mútua. Ele é uma operação atômica simples que envolve testar uma variável e definir seu valor para um novo valor em uma única operação, sem interrupções.
+
+Por exemplo, suponha que temos uma variável global Flag que é do tipo AtomicBoolean que serve como um sinalizador. Essas variáveis atomicas espera um valor inicial.
+Suponha também que temos uma variável inteira para incementar.
+
+> private AtomicBoolean flag = new AtomicInteger(false);
+> private int incrementador = 0;
+
+Digamos que vem uma requisição desejando incrementar, e o que ela precisa fazer é perguntar se a região crítica está livre.
+O que fazemos é esse codigo: 
+> flag.testAndSet();
+
+Esse trecho de código faz é pegar o valor do estado atual, no caso é False (pois iniciamos o AtomicBoolean como false) e em seguida ele tenta modifificar o valor para True.
+Como a variavel inicialmente está False, então ao realizar
+
+flag.testAndSet() 
+
+Ele vai pegar o valor inicial (que no nosso caso está como False inicialmente) para retorna-lo após tentar trocas o estado atual para True.
+Como a variável está False, então ele consegue trocar para True e retorna o estado anterior que é False.
+
+Novo Estado: True
+Valor retornado: False
+
+Se ele tentar fazer de novo esse trecho de código flag.testAndSet(), ele pegará o valor atual que agora é True e tentará mudar esse valor True para True. Em seguida ele retorna o estado anterior (antes de tentar a troca) que é True.
+Novo Estado: True
+Valor retornado: True
+
+Ele so consegue modificar o estado quando ele está como False. Retornado False e alterando para True.
+
+Para alterar um valor de uma variável ao fim da região crítica, basta fazer essa instrução para que outra Thread possa ser executada.
+> flag.set(false);
+
+E assim, outra Thread ao fazer flag.testAndSet(); poderá modificar o valor e entrar na região crítica.
+
+> public class Bakery {
+>     private AtomicInteger ticketCounter;
+>     private int[] tickets;
+>     private int n;
+>
+>     public Bakery(int n) {
+>         this.ticketCounter = new AtomicInteger(0);
+>         this.tickets = new int[n];
+>         this.n = n;
+>     }
+>
+>
+>     public void lock() {
+>         int myID = Thread.getID();
+>         this.tickets[myID] = this.ticketCounter.incrementAndGet();
+>
+>         for (int i = 0; i < this.n; i++) {
+>             while (this.tickets[i] != 0 &&this.tickets[i] < this.tickets[myID]);
+>         
+>         }
+>      }
+>
+>
+>      public void unlock() {
+>          int myId = Thread.getID()
+>          ticket[id] = 0;
+>      }
+> }
+
 Depois que executa-se a TSL, move-se o conteúdo de flag para o R1 e na mesma instrução movemos algo que é diferente de zero para a flag, ou seja, R1 receberá o conteúdo antigo de flag e flag receberá um novo conteúdo diferente de zero. 
 Depois disso, executamos uma instrução de comparação que compara o valor zero a R1 e a comparação é feita subtraindo os dois valores que queremos comparar. 
 Se essa subtração for zero é porque esses valores são iguais. 
