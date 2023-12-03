@@ -477,3 +477,26 @@ E os dois notify servem para notificar que um evento ocorreu ou que uma condiç�
               exemplo.runThreads();
           }
       }
+
+A saida do código será:
+
+    Thread 0 está executando!
+    Thread 0 terminou de executar!
+    Thread 9 está executando!
+    Thread 9 terminou de executar!
+    Thread 8 está executando!
+    Thread 8 terminou de executar!
+    Thread 7 está executando!
+    Thread 7 terminou de executar!
+    Thread 6 está executando!
+    Thread 6 terminou de executar!
+    Thread 5 está executando!
+    Thread 5 terminou de executar!
+    Thread 4 está executando!
+    Thread 4 terminou de executar!
+    Thread 3 está executando!
+    Thread 3 terminou de executar!
+    Thread 2 está executando!
+    Thread 2 terminou de executar!
+    Thread 1 está executando!
+    Thread 1 terminou de executar!
