@@ -233,17 +233,18 @@ O Lock TSL ou TAS (significa a mesma coisa) é um mecanismo de sincronização p
 Por exemplo, suponha que temos uma variável global Flag que é do tipo AtomicBoolean que serve como um sinalizador. Essas variáveis atomicas espera um valor inicial.  
 Suponha também que temos uma variável inteira para incementar.  
 
-> private AtomicBoolean flag = new AtomicInteger(false);
-> private int incrementador = 0;
+    private AtomicBoolean flag = new AtomicInteger(false);  
+    private int incrementador = 0;
 
 Digamos que vem uma requisição desejando incrementar, e o que ela precisa fazer é perguntar se a região crítica está livre.  
 O que fazemos é esse codigo:  
-> flag.testAndSet(true);
+
+    flag.testAndSet(true);
 
 Esse trecho de código faz é pegar o valor do estado atual, no caso é False (pois iniciamos o AtomicBoolean como false) e em seguida ele tenta modifificar o valor para True.  
 Como a variavel inicialmente está False, então ao realizar
 
-flag.testAndSet(true) 
+    flag.testAndSet(true) 
 
 Ele vai pegar o valor inicial (que no nosso caso está como False inicialmente) para retorna-lo após tentar trocas o estado atual para True.  
 Como a variável está False, então ele consegue trocar para True e retorna o estado anterior que é False.
@@ -258,7 +259,8 @@ Valor retornado: True
 Ele so consegue modificar o estado quando ele está como False. Retornado False e alterando para True.
 
 Para alterar um valor de uma variável ao fim da região crítica, basta fazer essa instrução para que outra Thread possa ser executada.  
-> flag.set(false);
+
+    flag.set(false);
 
 E assim, outra Thread ao fazer flag.testAndSet(true); poderá modificar o valor e entrar na região crítica.
 
