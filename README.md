@@ -1,4 +1,4 @@
-# Meu material didático de Sistemas Operacionais
+# Meu Material Didático de Sistemas Operacionais
 
 ## Introdução
 
