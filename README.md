@@ -720,6 +720,8 @@ Esse algoritmo não é rodado sob demanda, normalmente ele é rodado de forma an
 Devo trabalhar com um número mínimo de páginas candidatas a saírem de tal forma de que quando tenho um page fault eu tenho esse estoque de páginas que deveriam sair e aí eu vou retirando desse estoque, quando esse estoque está reduzido com poucos candidatos a saírem, eu executo o algoritmo não para escolher uma página, mas para escolher várias páginas que são candidatas para repor o estoque.  
 Assim, o custo para rodar o algoritmo seja amortizado por várias páginas que foram candidatas a serem retiradas. 
 
+## Segmentação
+
 Segmentação é uma técnica ou conceito criado para tentar resolver fragmentação interna de desperdício de recursos gerado por conta de fragmentação interna.  
 A fragmentação ocorre quando, quando tratamos a memória do processo como se fosse uma coisa só, uma região linear de endereços.  
 Esse conceito se apoia em dois pontos. O primeiro é que naturalmente, é bastante comum termos programas que dividem a memória usada em partições, áreas de memória diferentes umas das outras, logicamente diferentes.  
