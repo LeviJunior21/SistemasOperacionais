@@ -503,6 +503,7 @@ Uma das possiveis saidas do código acima será:
     Thread 1 está executando!
     Thread 1 terminou de executar!
 
+## Estratégia de Escalonamento e Gerenciamento de Cache em Sistemas Multi-CPU.
 
 Devemos nos preocupar também com o escalonamento. Em múltiplas CPU temos múltiplas filas, cada uma CPU terá uma fila e quando alguém estiver pronto para rodar coloco na menor fila.
 Imagine três CPU e cada uma delas tem uma fila, e imagine que o processo da CPU 3 para de rodar por algum motivo, quer seja porque a fatia de tempo dele acabou ou que ele bloqueou, eu passo para rodar o próximo da fila, se ele está pronto para rodar ele fica no fim da fila, senão sai da fila. 
