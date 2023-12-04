@@ -503,3 +503,274 @@ Uma das possiveis saidas do código acima será:
     Thread 1 está executando!
     Thread 1 terminou de executar!
 
+
+Devemos nos preocupar também com o escalonamento. Em múltiplas CPU temos múltiplas filas, cada uma CPU terá uma fila e quando alguém estiver pronto para rodar coloco na menor fila.
+Imagine três CPU e cada uma delas tem uma fila, e imagine que o processo da CPU 3 para de rodar por algum motivo, quer seja porque a fatia de tempo dele acabou ou que ele bloqueou, eu passo para rodar o próximo da fila, se ele está pronto para rodar ele fica no fim da fila, senão sai da fila. 
+Quando vem um novo processo que desbloqueou ou que acabou de ser criado, eu coloco ele na fila que está menor. 
+Entretanto, isso é ruim porque suponha que a CPU 2 execute um processo e que esse mesmo processo depois chama o exit e coloca o próximo da fila da CPU 2 para rodar, que ele depois também faz exit e coloca outro processo da CPU 3 para rodar, teremos uma CPU vazia enquanto que as outras estão trabalhando com outros processos. Então seria melhor uma única fila para todas CPU e na CPU que estiver livre eu coloco para rodar. E aí eu nunca vou ter o caso de uma estar vazia enquanto as outras estão sobrecarregadas. 
+
+Como a memória cache tem a informação que estou utilizando na memória mais recente, para evitar que fiquemos toda hora lendo a memória, se eu tenho um processo que está executando na CPU 1, ele está esquentando a cache (o que um determinado processo requer está na cache depois de buscar informações na memória). Então, devemos colocar esse processo na mesma memória cache para ela encontrar o dado que ela requer e não precisar buscar na memória.
+
+Caso percamos a CPU, esse processo que estava rodando vai para o fim da fila e nada garante que vou ir para a mesma CPU que estava rodando pois a fila é única, pois a fila é compartilhada e se nao for para a mesma CPU, minha cache estará fria e seria preciso esquentar a cache de novamente, buscando dados da memória para essa memória cache. Caso o processo voltasse para a mesma CPU, talvez ainda estaria quente. Ou seja, alguns ou todos os dados que o processo requer estivesse lá, e não teria sido sobrescrito por dados requeridos por outros processos.
+É muito melhor que o processo que foi para o fim da fila volte para a CPU onde ele estava rodando do que ir para outra CPU que pode não ter nada das informações que ele precisa e assim, ir buscar na memória, o que favorece a solução de ter uma fila por CPU. 
+
+Podemos fazer ficar híbrido, quando não tiver mais processos para a CPU rodar, roubamos o processo de outra CPU com fila maior e balanceamos a carga. E isso é um misto de escalonamento em dois níveis com jobs stelling (com roubo).
+Onde, temos o escalonamento em dois níveis. No primeiro nível o escalonamento é baseado em que, tenho um processo e eu preciso definir em que fila o processo vai, e isso é definido pela carga, a CPU que estiver menos carregada ganha o novo processo. 
+No segundo nível faco Round Robin e finalmente quando minha fila (da CPU) estiver vazia eu roubo um processo da fila que estiver maior e aí crio uma região crítica nas filas, onde mais de uma CPU pode ficar mexendo nessa fila e tenho que proteger o acesso a essa fila. 
+Ou seja, temos uma região crítica agora. 
+
+Bad Lock - É um grupo de processos que ficam bloqueados para sempre, isso acontece porque o evento que precisa acontecer para que um processo desbloqueie só pode ser gerado por um outro processo que também está bloqueado. E como esse processo está bloqueado, não vai rodar e não vai gerar esse evento que desbloqueia um processo para outro processo poder rodar.
+
+
+Existem 4 condições necessárias e suficientes para que um Bad Lock ocorra. São elas: 
+1 - Exclusão Mútua: Os recursos são alocados a um único processo de forma exclusiva e dedicada, eu não posso ter o mesmo recurso, os recursos que estão envolvidos no Bad Lock não são compartilhados, são recursos dedicados. 
+Um recurso é alocado a um único processo, são dedicados a um processo e não compartilhado. 
+
+2 - Não preempção: Os recursos que estão alocados a um processo não podem ser tomados de forma arbitrária pelo sistema operacional. O processo que fez a requisição do recurso precisa ele mesmo devolver o recursos para que o recurso volte a estar disponível. 
+O sistema operacional não pode tomar o recurso, o processo que fez a requisição precisa liberar o recurso para que esse recurso voltar a estar disponível. 
+
+3 - Posse e espera: Se P1 detém R1, então P1 está de posse de R1 e se ao mesmo tempo P1 requisita R2 e caso R2 não está disponível, P1 vai esperar de posse de R1. Como mostra na imagem anterior.
+Podemos impedir que um processo aloque mais de um recurso e por construção ou eu estou de posse desse recurso ou eu estou esperando pelo recurso, eu não posso estar de posse do recurso e esperando por outro porque eu só posso ter um recurso por vez. Isso é restritivo e não vai ser adequado na maioria dos casos. 
+Outra forma de fazer é um cenário de ou tudo ou nada, ou eu pego todos os recursos de uma vez só ou não fico com nenhum recurso. Toda vez que você vai alocar um novo recurso você precisa devolver tudo o que você tem e alocamos tudo o que você tinha mais o novo recurso, ou no início da execução alocar todos os recursos que você possa vir a usar, mas isso seria ineficiente nos dois casos. 
+Se vários processos dependem de um recurso que está com um processo, eles demorarão a executar. Se um processo precisar de muitos recursos, dificilmente vai executar. Se eu alocar todos os recursos eu posso pegar recurso que posso não usar.
+
+4 - Espera circular: Tenho um ciclo de processos esperando pela liberação de recursos que está em posse de outro processo que pertence a esse ciclo. 
+No algoritmo, alguém só dá a mão direita para quem for mais alto que ele e só dá a mão esquerda para quem for mais baixo que ele. Para isso ocorrer basta que eu enumere todos os recursos e forço que os processos façam alocação de recursos de forma crescente ou decrescente no número de recursos. Isso traz um problema em que a alocação de recursos agora não é mais feita na ordem que faz mais sentido para a lógica do negócio do programa porque precisamos respeitar essa ordem de recursos. 
+Sendo assim, não temos como resolver Bad Locks. Para resolver Bad Lock temos que implementar soluções para problemas específicos das aplicações, ou seja, deve ser resolvido no nível da aplicação. 
+LiveLock - Da mesma forma que no Bad Lock você tem uma situação em que os processos não fazem progresso, só que no livelock o processo ganha a CPU mas não consegue avançar por algum motivo. Por exemplo, um processo que está em loop é exemplo de um LiveLock, é um exemplo bem simples que envolve um único processo. 
+
+Gerência de Memória
+
+Existem três funções 
+1 - Alocação de memória: Definir que pedaços da memória serão ocupados pelo sistema operacional e por cada um dos processos que precisam ser executados. 
+
+2 - Programar a CPU para realocar endereços. Um processo é a principal estrutura de dados do sistema operacional que armazena informações sobre os processos que estão executando no sistema, essas informações são armazenadas conjuntamente numa tabela de processo onde cada processo tem sua própria entrada nessa tabela e além disso o processo é formada pela imagem do processo, ou seja, um código que aquele processo precisa executar bem como as áreas de dados manipuladas por esse código. 
+
+A imagem do processo é formada pelos componentes.
+
+Texto ou código que esse processo precisa executar. Ou seja, as instruções que foram geradas pelo compilador por uma linguagem de mais alto nível e que manipulam áreas de memória, manipulam registradores e constantes. 
+Temos também os dados que são manipulados por esse código e esses dados são divididos em quatro sessões, a sessão de dados que é dividida em dados iniciados (dados estáticos) e dados não iniciados que correspondem às variáveis globais.
+Em seguida temos o heap, que é uma área de memória que é usada para que partes da memória possam ser alocadas dinamicamente pelo programa. 
+Temos também a pilha que é uma área de memória alocada dinamicamente mas que é usada pelo runtime da linguagem de programação para implementar o escopo de variáveis, então toda vez que chamamos uma função, método ou procedimento numa linguagem de programação teremos variáveis que são locais aquele método ou aquela função. Além dos parâmetros que foram passados para essa função e o endereço de retorno que essa função tem. Ou seja, quando a função terminar de executar ela deve voltar a executar um código indicado por este endereço de retorno. 
+
+Tudo isso é armazenado nessa pilha. E uma pilha é usada porque essas informações são empilhadas quando a função é chamada e quando o retorno da função essas variáveis são desempilhadas da pilha e somem, deixam de existir, ou seja o escopo daquelas variáveis é a execução da função. 
+Num arquivo existem o texto ou código e dados iniciados que é o que ela precisa e os outros só existem durante a execução, essas áreas de memória são guardadas no cabeçalho. 
+
+O compilador gera os endereços corretos, ou seja, ele gera endereços nesse código que vão acessar as variáveis que estão armazenadas nos dados iniciados e não iniciados, o monte e a pilha. 
+
+Em relação a pilha, o endereço é sempre uma referência a partir do apontador do stack pointer que aponta para o topo da pilha, então será sempre uma operação aritmética executada em relação ao topo da pilha. Assim, se eu quiser acessar uma variável que está no topo da pilha, eu uso o stack pointer, se eu quiser acessar uma variável que está quatro bytes abaixo do topo da pilha eu faço stack pointer menos quatro e assim por diante. 
+Por outro lado, o monte e os dados iniciados precisam ser acessados com os seus endereços, esses endereços são calculados de acordo com como essas áreas de memória são alocadas para armazenar essas variáveis. 
+Dois processos diferentes não podem executar o mesmo programa, como esses processos vão estar armazenados em áreas de memória diferentes, o texto ou código teria que apontar para endereços de memória diferentes quando meu processo A estiver executando e o meu processo B estiver executando. 
+
+Para resolver esse problema, o compilador gera endereços a partir de um espaço de endereçamento lógico. Ou seja, o compilador cria uma abstração que é esse espaço de endereçamento lógico assumido que o programa vai ser carregado no endereço zero da memória e ele vai até o tamanho T dele e aí os endereços são gerados assumindo esse espaço de endereçamento lógico. Então se por exemplo esse programa, o código dele tem o tamanho X, o primeiro dado na área estática (dados iniciados ) vai ter o endereço X e códigos que referenciam essa área de memória vão usar o endereço X para fazer referência a essa área de memória. 
+Se o texto tem tamanho X, e os dados iniciados tem tamanho 4 bytes, então, o endereço dos dados não iniciados teria o endereço X + 4. 
+
+Em todos os casos, isso precisa ser feito pela CPU já que é uma operação que é feita a cada acesso a memória e para que isso aconteça o sistema operacional precisa configurar ou programar a CPU de forma adequada para que esses endereços lógicos sejam realocados nos seus endereços físicos correspondentes.
+
+A terceira função do gerente de memória é programar a CPU para proteger a memória. Um programa pode ter um bug que faça com que uma instrução do processo A tente referenciar uma área que está fora do processo que pode inclusive pertencer a um outro processo, ou mesmo ao sistema operacional. E não podemos deixar que um processo possa ler ou escrever na área de memória que não a pertence. Então para fazer isso o sistema operacional também precisa programar a CPU para que toda vez que um processo acessa a memória seja feito uma verificação para garantir que esse processo não está tentando acessar uma área de memória que não lhe pertence.
+
+Primeiros modelos de gerente de memória 
+
+Gerência de memória sem virtualização 
+Premissas:
+Todo processo é inteiramente carregado na memória.
+O processo é carregado de forma contígua na memória. 
+
+Alocação de memória com base nas premissas:
+
+A forma mais simples de fazer alocação de memória nesse contexto é as partições fixas, ou seja, minha memória é dividida em pedaços que podem ser de tamanho iguais ou de tamanhos diferentes e cada partição dessa pode receber um processo.
+Então a estrutura de dados para ajudar a gerenciar essa memória é extremamente simples, se uma memória tem 4 partições por exemplo, eu preciso de 4 bits para gerenciar essa memória, cada bit vai dizer se a partição correspondente está livre ou está ocupada. 
+Além do status da partição, se está ocupada ou se está livre, o endereço inicial da partição e final da partição. 
+
+Nesse contexto eu posso alocar um processo por partição e aí o número máximo de processos que vou poder executar vai ser o número de partições que eu tenho. 
+Um dos problemas desse tipo de estratégia para alocação de memória é que temos fragmentação interna, ou seja, pedaços da memória que estão livres mas não pode ser alocada a um outro processo. Quanto mais processos estiverem na memória menores são as chances de ter minha CPU ociosa porque todos meus processos estão bloqueados. Então, existe um incentivo para que se aumente o grau de multiprogramação, ou seja, a quantidade de processos que estão prontos para rodar ao mesmo tempo. 
+Então essa memória que não está sendo usada, poderia estar sendo usada para criar um outro processo, mas isso não pode ser feito por conta dessa fragmentação interna na memória. 
+
+Então ao invés de usarmos partições físicas, usamos partições dinâmicas e quando se usa partições dinâmicas, as estruturas de dados usados para gerenciar a memória é um pouco mais complexo. 
+Podemos usar uma lista onde cada elemento dessa lista descreve a situação de uma partição nesta minha memória. 
+A partição começa no endereço zero no nosso exemplo e tem 32K de tamanho e está livre no nosso exemplo. Assumindo que a minha memória tem 32 KBytes. 
+
+Exemplo de fragmentação interna:
+[0, 3K) ocupado
+[3K, 4K) livre
+[4K, 6K) ocupado
+[6K, 32K) livre 
+
+São partições dinâmicas. 
+Fragmentação externa é quando tenho pedaços muito pequenos de memória como por exemplo [3K, 4K] como demonstrado anteriormente que estavam livres e não podem ser aproveitadas por outros processos. 
+A possibilidade de gerar essa fragmentação externa vai depender da estratégia de alocação, das propriedades dos processos que são executados nesses sistema, ou seja, a distribuição dos tamanhos desses processos, a taxa de chegada, a taxa de permanência desses processos no sistema e aí existem várias estratégias de alocação. 
+
+
+Fragmentação interna ocorre quando há espaço não alocado dentro de um bloco de memória, enquanto que fragmentação externa ocorre quando há espaço livre na memória, mas esses espaços estão dispersos em vários blocos tornando difícil alocar um bloco contíguo na memória para um processo. 
+Fragmentação interna utiliza alocação de forma estática, com partições fixas, já a fragmentação externa é dinâmica.
+Essa estratégia mencionada anteriormente é a estratégia de alocação por endereços.
+
+Os tipos de estratégias são: 
+
+Lista ordenada por endereços: A primeira área de memória que caiba o processo seja usada para a alocação. Essa estratégia chama-se First Fit. Ela usa a parte inicial da memória, gerando muitos fragmentos na parte inicial da memória. 
+Uma alternativa ao First Fit é usar uma lista circular e fazer um algoritmo chamado Next Fit, ou seja, eu guardo a última posição de alocação e sempre eu começo a busca por um espaço grande o suficiente a partir dela. Se não achar, o processo não é criado.
+-  Lista ordenada por tamanho dos espaços livres: Existem duas estratégias que podem ser usadas, uma é a Best Fit que é se eu tenho um processo de tamanho K para alocar eu vou alocar na partição cujo tamanho seja o mais próximo de K ou idealmente K, a ideia é minimizar o tamanho dos fragmentos. 
+O Best Fit eu percorro buscando o menor bloco de memória livre que seja o menor possível desde que seja grande o suficiente para alocar o processo. 
+
+O problema é quando eu minimizo o tamanho dos fragmentos, eu posso criar fragmentos que são tão pequenos que não cabem outros processos lá e aí quando eu junto todos esses pedacinhos de fragmentos eu posso ter uma alta fragmentação externa. Então uma alternativa seria seguir o caminho contrário, alocar o processo sempre na maior área de memória disponível, isso vai fazer com que os fragmentos sejam os maiores possíveis e minimizar a probabilidade de um fragmento não ser grande o suficiente para caber um novo processo. 
+
+Relocação de Endereços Lógicos 
+
+Registrador base 
+- Endereços lógicos é somados ao registrador base: Na minha CPU existe um registrador chamado de registrador base e quando o sistema operacional carrega um processo para executar o que ele faz é carregar do registrador base o endereço inicial, o endereço físico inicial, de onde o processo foi armazenado. 
+O endereço lógico que é gerado pelo compilador ele foi gerado assumindo que o processo A por exemplo estava no endereço zero. Como o processo A está armazenado de forma contígua e ao invés de estar armazenado no endereço zero estava no endereço Ba, para que eu mapeie um endereço lógico no endereço físico correspondente, basta que eu some Ba a cada endereço lógico que for gerado. 
+
+Cálculo do endereço físico: EF = [Registrador base] + EL 
+
+O conteúdo do registrador base mais o endereço lógico que está no processo Ba por exemplo que é o primeiro processo da memória no nosso exemplo, e quando a instrução é lida para a CPU, então essa instrução está contida no endereço lógico, esse endereço lógico contido na instrução é somado  ao registrador base para gerar o endereço físico que deve ser usado para acessar a posição correta da memória. 
+
+Proteção da memória 
+Endereços físicos são verificados antes de acessar a memória 
+	-  Endereços físicos devem ser maiores que o valor do registrador base e menores que o valor do registrador limite. 
+	Devemos usar registrador limite e o registrador base para definir quais são os limites 
+inferior e superior aos endereços dos endereços que podem ser gerados por cada 
+	processo. E aí o sistema operacional carrega nesse registrador de limite o valor que
+marca o fim do processo (a posição de memória do fim do processo).
+    -  Se o endereço físico cai fora dessa faixa, uma exceção é lançada, o sistema
+ 	operacional executa e toma as providências cabíveis. Tipicamente o processo vai
+ser encerrado e vai ser enviado uma mensagem dizendo que houve uma violação de endereços, ou seja, o programa tem um bug. 
+
+Swapping de processos 
+Tamanho de um processo 
+
+O tamanho de um texto de um processo, os dados iniciados e não iniciados está no código executável no cabeçalho do arquivo executável mas para o monte e pilha o sistema operacional arbitrária um tamanho, dar um chute para cada, em alguns casos isso pode ser até arbitrado pelo compilador e o sistema operacional apenas usa esse valor que foi arbitrado pelo compilador. E aí, à medida que o processo vai executando, essa pilha vai sendo alocada, o monte também vai sendo alocada, quando se retorna uma função a pilha diminui e essa área que foi pré alocada é usada durante a execução do programa. 
+
+Se o espaço arbitrado não for suficientemente grande, o processo não vai conseguir ser executado. O sistema operacional deveria tomar providências para crescer o seu processo.
+Primeiro ele precisa descobrir que o processo precisa crescer. Primeiro, para que isso aconteça, o sistema operacional precisa executar para executar esse código que verifica que o processo ou que o monte que está querendo crescer por cima da pilha, ou que a pilha extrapolou a área de memória que foi inicialmente alocada para a pilha. 
+Em relação a pilha, ela só cresce quando faço uma chamada ao uma função, ou seja, o sistema operacional não está envolvido no crescimento no tamanho da pilha. 
+Porém se o topo da pilha ultrapassa o limite, ocorre uma exceção, uma violação de endereço ao tentar colocar algo fora da pilha e essa violação de endereços faz com que uma exceção seja lançada e o sistema operacional executa e aí o sistema operacional identifica que o programa precisa crescer.
+
+Como o sistema operacional diferencia o crescimento da pilha de um bug usando a arquitetura do processador que oferece uma instrução chamada toque de pilha e essa instrução simplesmente faz um acesso à memória e uma vez que chamo uma função eu tenho que empilhar determinadas coisas na pilha, empilhar o endereço de retorno, os argumentos que foram chamados, que foram passados para a função e eu tenho que empilhar as variáveis locais. Eu poderia verificar o tamanho da pilha ao chamar a função.
+Isso gera uma exceção, minha pilha não tem mais espaço para empilhar esse novo quadro de pilha, o sistema operacional executa e verifica que o programa estava executando o toque de pilha e nesse caso vai crescer o processo. Qualquer outra exceção de violação de endereços que seja lançada que não esteja associada a uma instrução toque de pilha vai ser considerada um bug e o programa vai ser cancelado. Basta mudar na tabela de processo o tamanho do processo e mudamos o valor do registrador limite. 
+Na realidade, a forma de crescer um processo é usando uma estratégia chamada de swap. 
+Faz o toque de pilha e executa o Swapper. 
+O swap é usar uma área do disco para armazenar um processo e depois trazer esse processo para a memória. 
+Na verdade o swap foi criado para um outro objetivo que é de aumentar o número de processos que eu posso ter ativos no meu sistema criando uma área de disco onde os processos possam repousar nessa área de disco. Então de vez em quando eu tiro processos que estão na memória e coloco no disco e tiro processos que estão no disco e coloco na memória. Essas operações são chamadas de swap. 
+Quando um processo precisa crescer e não existe uma área de memória contígua livre que permita o crescimento, eu movo esse processo para o disco, cresço o processo no disco, ou seja, atualizo as estruturas de dados do processo que indicam o tamanho daquele processo e aí quando isso for feito eu posso depois trazer de volta o processo para a memória desde que eu tenha uma área de memória contígua do tamanho suficiente para que esse processo possa ser trazido novamente para a memória. 
+
+Digamos que na memória RAM temos o sistema operacional, o processo A, Processo B, Processo C e Processo D, e na parte do disco na área de swap dela eu tenho o Processo E, o Processo F e o Processo G. 
+O Swap é um processo que roda de tempos em tempos e a função desse processo é tentar fazer Swap In, ou seja, trazer processos que estão no disco para a memória. Quando o swap roda ele faz o Swap In. 
+Tento fazer Swap In e se não couber, faço Swap Out e levo processos da memória para o disco e tento fazer Swap In novamente.
+Swap In: Processos do disco para a memória.
+Swap out: Processos da memória para o disco.
+
+O Swapper primeiro tenta fazer Swap In de processos e entre os processos que estão armazenados no disco que podem fazer Swap In, eu vou apenas fazer Swap In dos processos que estão prontos para rodar, se ainda sobrar espaço eu faço Swap In dos processos que estão bloqueados. 
+Os processos que estão bloqueados não precisam ocupar memória já que eles não podem mais ser colocados para executar já que eles estão esperando por algum evento. 
+Se tenho muitos processos prontos para rodar no disco e preciso escolher para fazer Swap In, preciso escolher os processos e podemos usar sistema de prioridades. Se as prioridades não forem usadas, podemos escolher por tamanho do processo, escolhendo processos menores e assim poderia rodar vários processos na CPU e usaria o Swapper em intervalos de tempo maiores, mas poderia causar inanição porque eles sempre seriam prioritários e deixaria de trazer alguns dos maiores. 
+
+Por outro lado, se existe um processo pronto para rodar no disco e que não há espaço na memória, precisamos fazer Swap Out e aí de novo a primeira coisa que devo olhar é o estado dos processos que estão na memória. Eu vou priorizar fazer Swap Out dos processos que estão bloqueados já que esses processos não podem ganhar a CPU enquanto eles estiverem bloqueados. E neste caso uma estratégia bem interessante, se eu tiver vários processos bloqueados eu vou fazer primeiro Swap Out dos processos maiores para liberar mais espaço para fazer o Swap In nos processo que precisam entrar na memória. 
+
+Note que um processo que estava bloqueado na memória foi para o disco depois de uma operação de Swap out, ele pode passar a ficar pronto para rodar, lembrando que um processo está bloqueado esperando por algum evento. Quando esse evento ocorre, o sistema operacional executa e coloca aquele processo de novo pronto para rodar, e aí eu vou ter um processo pronto para rodar na área de Swap no disco e ele vai ser um processo prioritário para fazer Swap In. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Memória Virtual: Disco passa a ser a memória, e a memória real agora passa a ser o cache do disco.
+Apenas partes de processos que efetivamente serão usadas vão ser carregadas para a memória e todo o resto fica no disco.
+Esse tipo de memória se tornou necessário após os processos crescerem muito de tamanho. Os dados que não são acessados não são trazidos para a memória.
+Há aplicações que os processos são muito grandes e sem uso e se ele for carregado para a memória ele estaria desperdiçando memória.
+A Memória Virtual aumenta o número de processos carregados na memória e aumenta o grau de multiprogramação, aumentando a utilização da CPU.
+Outro benefício é que os processos podem ser maiores que a memória física.
+Na memória virtual eu só carrego partes de processos. Já no swap eu trago o processo inteiro. 
+O tamanho do endereçamento será de 0 a 2^N-1, onde N é o tamanho do barramento.
+A memória disponível para o monte e a pilha torna-se grande. Ou seja, são 2^N endereços.
+
+Memória Virtual com paginação
+
+Nela o espaço de endereçamento lógico é dividido em partes de tamanhos iguais.
+Nela, alguns bits indicam qual é o deslocamento da página a ser carregada e outros poucos bits indicam qual a página está sendo acessada.
+Dividimos a memória RAM em partes iguais, isso é chamado de molduras de páginas e qualquer página do endereçamento lógico pode ser carregada na alocação da RAM onde se encontram molduras disponíveis.
+A ideia é que páginas que são efetivamente usadas serão carregadas na memória.
+Não posso usar o registrador base nela para acessar a memória. Terei que usar o gerenciador de Memória MMU.
+As páginas são alocadas sob demanda em molduras de páginas que estejam livres. E apenas páginas que são efetivamente usadas são carregadas na Memória.
+A MMU realoca endereços lógicos.
+A MMU levanta uma exceção por falta de página, o sistema operacional executa e aloca uma moldura de página para a nova página que precisa ser carregada do disco para a memória e o mapeamento pode ser refeito novamente.
+O endereçamento lógico chega na MMU, separo o número da página do deslocamento e verifico se a página está presente na memória associativa. Se ela estiver presente eu concateno o número do quadro de página com o deslocamento e gero o endereço físico. 
+Caso eu não encontre a página na memória associativa, faremos um mapeamento mais lento, lendo na memória e a informação é atualizada na memória associativa e o próximo endereço lógico gerado para essa mesma página estará presente na memória será mapeado rapidamente na memória associativa. 
+E a próxima instrução a ser executada é próxima do endereço da instrução anterior.
+A tabela de páginas resolve problemas de desperdício de memória.
+A função do MMU é mapear endereços virtuais utilizados pelos programas em execução em endereços físicos correspondentes à memória física do sistema.
+O filho, ao invés de copiar o processo do pai ao fazer o fork, copiamos a tabela de páginas, copiamos a tabela de primeiro nível armazenada no sistema operacional na entrada do pai e onde está o filho e teríamos dois processos apontando para as mesmas páginas. 
+Os dois, pai e filho, apontam para a mesma página. 
+Gostaria de fazer isso sob demanda, quando o pai tentar escrever na página ou o filho tentar escrever numa página eu deveria copiar aquela página para cada um ter sua cópia privada e quem faz isso é o sistema operacional e para ele executar precisa de uma exceção para esse caso. Quando pai ou o filho tentam fazer uma escrita, o sistema operacional é avisado, lançamos uma exceção, o programa vai ser abortado por violação de acesso a memória. 
+O sistema operacional quando cria processos, ele marca quanto as páginas do pai, quanto as do filho para ser read only, e aquelas páginas que eram read/write, além de serem read only, elas vão tem um bit de copy/write isso ná página de nível 1. Como a página é read only, lançará uma exceção. o sistema operacional, executa e verifica se a página que está sendo acessada onde houve uma violação de acesso está marcada para copy/write. 
+A cópia é feita sob demanda, só quando é necessário. Isso torna a criação de processos mais eficiente que anteriormente. 
+As páginas que eram copy and write, eram as páginas que eram read/write e o sistema operacional muda para copy/write. As páginas que eram read only continuam read only, de tal forma que se um processo gravar nessa página gerará uma exceção. 
+Ela é read/write e read only ao mesmo tempo, gera a exceção, copia e vira copy/write. 
+Quando ocorre page fault, a pior página para tirar é aquela que contém a próxima instrução a ser executada, pois teríamos que trazê-la de volta então ele custa caro. Tipicamente, os algoritmos de substituição de páginas precisam da ajuda do hardware.
+
+Podemos apenas olhar para o bit R, a cada interrupção do timer, zeramos todos bit R, e se vem um page fault e a memória está cheia, precisamos remover uma página da memória e devemos tirar a página que tem R igual a zero, que não foi recentemente usada. 
+Esse algoritmo se chama NRU (não recentemente usado) e tiramos a página que tem o bit R igual a zero. 
+Se M igual a zero deve-se removê-la porque essa pagina não precisa escrever no disco, ela não foi modificada e a página que vai entrar pode sobrescrever essa outra página, isso vai ser mais rápido que salvá-la no disco, esperar que ela salve no disco e depois trazer a página de volta. A página que preciso retirar é a que foi menos recentemente usada. 
+Precisamos implementar o algoritmo LRU. (Least Recently Used). Podemos ter uma fila e um processo que é referenciado vai para o fim da fila e quem será retirado da memória é quem está no começo da fila. Não dá para implementar LRU com esse suporte de hardware. 
+Tiramos da memória páginas que não estão sendo usadas.
+
+Para garantir LRU, para cada acesso à memória, eu teria que atualizar essa estrutura de dados que vai requerer vários acessos à memória, então não faz muito sentido que a cada acesso a memória eu tenha que acessar a memória várias vezes para atualizar essa estrutura de dados. 
+Uma possibilidade é que invés de ter só um bit, ter um campo que cabem 64 bits e além disso na minha CPU tenha um registrador de 64 bits que conta o número de instruções, cada instrução que ele executa ele incrementa esse contador, toda vez que faço uma referência à memória o hardware copia esse contador no campo correspondente ao quadro de página que foi acessado e aí quando vem o page fault, quem deve sair é quem tem o menor valor pois, essa página é a menos recentemente usada e aí eu retiro essa página. 
+Essa página retirada é a que tem a menor probabilidade de ser acessada. Para cada instrução executada pela CPU esse valor é incrementado. 
+Deve-se fazer um registrador de 64 bits porque pode gerar overflow.
+
+Eu só preciso aumentar o valor de alguém se o bit R estiver ligado, ou seja, se a página estiver sendo referenciada e quero que esse aumento seja o maior possível o valor dele. 
+Devo colocar R no bit mais significativo desse registrador de 64 bits. 
+E aí, devemos retirar da memória o menor valor.  
+Shift right para todos e coloca o bit R no início do registrador de 64 bits.
+Isso não é LRU, é uma aproximação para o LRU. 
+Toda vez que ocorrer page fault, vamos rodar esse algoritmo para verificar qual página deve sair não é muito eficiente, pois ele vai dizer que a memória está cheia e aí é muito provável que ocorra outro page fault novamente.
+Esse algoritmo não é rodado sob demanda, normalmente ele é rodado de forma antecipada em algo parecido com gerência de reservatórios.
+Devo trabalhar com um número mínimo de páginas candidatas a saírem de tal forma de que quando tenho um page fault eu tenho esse estoque de páginas que deveriam sair e aí eu vou retirando desse estoque, quando esse estoque está reduzido com poucos candidatos a saírem, eu executo o algoritmo não para escolher uma página, mas para escolher várias páginas que são candidatas para repor o estoque.
+Assim, o custo para rodar o algoritmo seja amortizado por várias páginas que foram candidatas a serem retiradas. 
+
+Segmentação é uma técnica ou conceito criado para tentar resolver fragmentação interna de desperdício de recursos gerado por conta de fragmentação interna. 
+A fragmentação ocorre quando, quando tratamos a memória do processo como se fosse uma coisa só, uma região linear de endereços. 
+Esse conceito se apoia em dois pontos. O primeiro é que naturalmente, é bastante comum termos programas que dividem a memória usada em partições, áreas de memória diferentes umas das outras, logicamente diferentes. 
+Por exemplo, o compilador divide a imagem do processo em código, heap e pilha, que são regiões de memória ou partições que não tenham a ver umas com as outras para armazenar algum tipo de dados específicos. 
+Se cada segmento fosse gerenciado de maneira independente, pudesse crescer de maneira independente, o segmento de dados não vai crescer depois que é criado mas, o heap se pudéssemos tratar esse segmento, como uma coisa só, podemos gerenciar ele de maneira mais adequada, por exemplo se pudesse crescer de maneira independente do que as demais regiões do processo, de alto nível é isso que segmentação promete, tratar as regiões, as partições que o programa cria, que armazenam coisas diferentes e gerenciar cada um desses segmentos de maneira independente, crescendo ou diminuindo, alocando da melhor maneira possível potencialmente diferente entre si. 
+Então é como se no modelo anterior tivéssemos uma alocação contígua de endereços lógicos para endereços físicos e nesse novo mecanismo de memória segmentada, cada região de um processo, ou programa de execução, ou seja, o código, a heap e a pilha fossem três segmentos sejam tratados pelo sistema operacional que vão ser gerenciado pelo mecanismo de gerência de memória de maneira independente, crescendo, diminuindo ou alocado em campos diferentes para melhorar a alocação de memória. Isso que é memória segmentada, gerencie os segmentos do seu programa de maneira independente. 
+
+O programador teria acesso a cada criação de segmento e ele poderia colocar cada estrutura de dados que ele cria no seu programa em um segmento diferente, isso seria a cargo do programador e não do sistema operacional. Como dividir o programa em segmentos é decisão do programador. 
+Uma maneira de mapear a memória física é tratar cada segmento de maneira independente. A gente mapeia o código, heap e pilha na memória física. Então cada segmento teria seu registrador base e o registrador limite na memória física. 
+O código, o heap e a pilha teriam seu registrador base e o seu registrador limite. Antes de segmentação tínhamos dois registradores, o base e o limite, agora temos dois registradores por segmento. A quantidade de segmentos é arbitrária, é decidida pelo programador mas existe uma quantidade máxima para ele. Mas colocar muitos registradores é caro. 
+
+Agora no sistema operacional temos uma tabela de segmentos, uma tabela que armazenará todos os valores dos registradores base e limite. Os registradores limite continuam querendo implementar proteção. 
+Usamos o registrador base e somamos a alguma coisa ao valor do registrador base para encontrar o endereço físico. Para isso, usamos o próprio endereço lógico para navegar na tabela de segmentos e reservamos um pedaço do endereço lógico, os bits mais significativos para navegar na tabela de segmentos. 
+A quantidade de bits que precisamos para navegar depende da tabela que queremos usar, que por sua vez tem a ver com a quantidade máxima de segmentos que vamos permitir. 
+Se tivermos uma quantidade de 1024 segmentos, vamos precisar de 10 bits. Usa-se o restante do endereço lógico para calcular o deslocamento, uso o restante desse endereço e somamos ao registrador base da tabela de segmentos e navegamos na memória física. 
+Usamos o offset (pego o restante) do endereço lógico para saber se ele é maior ou não que o registrador limite da linha da tabela de segmentação na linha correspondente ao offset. 
+A segmentação dá liberdade ao sistema operacional crescer de maneira independente o código, pilha e fila por exemplo, e resolve ou diminui o problema de fragmentação interna mas dá bastante problema e não é mais usado hoje. 
+Embora a fragmentação externa causasse desperdício, não existe mais, mas existem áreas de memória que não são usadas na segmentação e isso era um problema típico de memória segmentada causando fragmentação externa. Gerenciar (muitos) segmentos de tamanho variável (que crescem dinamicamente) não é fácil. Os programas crescem dinamicamente.
+E há uma dúvida de onde colocar o novo segmento, no menor ou maior slot livre. Se colocar no menor slot livre, no futuro esse segmento precisa ser expandido e realocar transferindo o segmento inteiro para outra posição mais no fim da memória física, por exemplo, isso não é de graça. Deve-se escolher o melhor tamanho do segmento para o heap. 
+Esse tipo de gerência de memória (segmentação, que melhora o problema de fragmentação interna, ele foi criado para isso) gera fragmentação externa, espaços livres não alocados para nenhum processo entre os segmentos da memória física. 
+Isso fica muito complicado de gerenciar e ele cria problemas de fragmentação externa. 
+Mas a fragmentação já existia antes da segmentação. 
+
+
